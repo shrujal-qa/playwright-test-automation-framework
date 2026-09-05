@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -21,9 +22,9 @@
     "paths": {
       "@config/*": ["./config/*"],
       "@lib/*": ["./lib/*"],
-      "@specs/*": ["./specs/*"]
+      "@specs/*": ["tests/*"]
     }
   },
-  "include": ["config", "lib", "specs", "playwright.config.ts"],
+  "include": ["config", "lib", "tests", "playwright.config.ts"],
   "exclude": ["node_modules", "dist", "playwright-report", "allure-results", "test-results"]
 }

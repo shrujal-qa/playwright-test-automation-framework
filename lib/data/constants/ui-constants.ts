@@ -15,4 +15,14 @@ export const UI_CONSTANTS = {
     MENU_OPTIONS: {
         ASSIGN_LEAVE: 'Assign Leave',
     },
+    ELEMENTS: {
+        LOGIN_PAGE: [
+            { name: 'username', role: 'textbox', selector: 'username' },
+            { name: 'password', role: 'textbox', selector: 'password' },
+            { name: 'login button', role: 'button', selector: /login/i },
+        ],
+        DASHBOARD: [
+            { name: 'Assign Leave', role: 'link', selector: /Assign Leave/i },
+        ],
+    },
 } as const;
