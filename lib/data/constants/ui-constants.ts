@@ -2,6 +2,8 @@
  * UI Constants
  * Contains: UI labels, button text, structural text
  */
+import type { Page } from '@playwright/test';
+
 export const UI_CONSTANTS = {
     BUTTONS: {
         LOGIN: 'login',
@@ -17,12 +19,12 @@ export const UI_CONSTANTS = {
     },
     ELEMENTS: {
         LOGIN_PAGE: [
-            { name: 'username', role: 'textbox', selector: 'username' },
-            { name: 'password', role: 'textbox', selector: 'password' },
-            { name: 'login button', role: 'button', selector: /login/i },
+            { name: 'username', locator: (page: Page) => page.getByPlaceholder(/username/i) },
+            { name: 'password', locator: (page: Page) => page.getByPlaceholder(/password/i) },
+            { name: 'login button', locator: (page: Page) => page.getByRole('button', { name: /login/i }) },
         ],
         DASHBOARD: [
-            { name: 'Assign Leave', role: 'link', selector: /Assign Leave/i },
+            { name: 'Assign Leave', locator: (page: Page) => page.getByText(/Assign Leave/i) },
         ],
     },
 } as const;
