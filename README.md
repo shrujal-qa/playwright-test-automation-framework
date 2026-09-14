@@ -57,6 +57,13 @@ because it offers stable, public, role-based functionality — but every layer
 (config, pages, fixtures, helpers, CI) is generic and swap-friendly for any
 other application under test.
 
+End-to-end coverage spans **Authentication, Dashboard, PIM, Leave, Admin
+(System Users), Recruitment, My Info, Directory, and Maintenance**
+(security-checkpoint only) — see [Test Coverage](docs/test-coverage.md) for
+the full test-by-test breakdown. Tests that create data (employees, system
+users, candidates, leave requests) always clean up after themselves so the
+shared public demo is left exactly as they found it.
+
 > 💡 **Goal:** demonstrate _how to structure_ a Playwright project, not just _how to write_ tests.
 
 ---
@@ -138,11 +145,20 @@ playwright-test-automation-framework/
 │   ├── pages/
 │   │   ├── base/              # BasePage with stable primitives
 │   │   ├── auth/              # LoginPage
-│   │   └── dashboard/         # DashboardPage
+│   │   ├── dashboard/         # DashboardPage
+│   │   ├── pim/               # AddEmployeePage, EmployeeListPage, EmployeeProfilePage
+│   │   ├── leave/             # ApplyLeavePage, MyLeavePage, LeaveListPage
+│   │   ├── admin/             # AddUserPage, SystemUsersPage
+│   │   ├── recruitment/       # AddCandidatePage, CandidatesPage
+│   │   ├── my-info/           # MyInfoPage (read-only)
+│   │   ├── directory/         # DirectoryPage (read-only)
+│   │   └── maintenance/       # MaintenancePage (checkpoint only)
 │   └── utils/                 # Logger, Wait, DataGenerator
 ├── specs/
 │   ├── setup/                 # auth.setup.ts — persists storage state
-│   └── features/              # Business-readable specs (auth, dashboard, …)
+│   └── features/              # Business-readable specs — auth, dashboard, pim,
+│                               # leave, admin, recruitment, my-info, directory,
+│                               # maintenance, ui
 ├── docs/                      # Quick Start, Architecture, Runbook, Troubleshooting…
 ├── playwright.config.ts       # Projects, reporters, baseURL
 ├── tsconfig.json              # Strict TS config with path aliases
