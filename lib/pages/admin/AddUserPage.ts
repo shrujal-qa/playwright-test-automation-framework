@@ -46,27 +46,23 @@ export class AddUserPage extends BasePage {
     }
 
     /**
-     * Two prior strategies both failed identically (value never changes):
-     * a `.oxd-autocomplete-dropdown` class match found nothing at all, and
-     * a page-wide `role="option"` query found *something* but clicking it
-     * never affected the field — most likely a native, visually-hidden
-     * `<select><option>` elsewhere on the page that satisfies the ARIA
-     * role query without being the real suggestion widget at all.
+     * The widget-scoped wrapper (`.oxd-autocomplete*` ancestor) genuinely
+     * exists but its innerText is always empty — meaning the suggestion
+     * list itself is not nested inside it in the DOM. This is consistent
+     * with the dropdown being rendered as a portal/teleport elsewhere in
+     * the document (a common pattern to escape parent overflow clipping),
+     * which every DOM-proximity-based strategy so far has missed.
      *
-     * This scopes to the widget's own wrapper (walking up from the input
-     * to its nearest `.oxd-autocomplete*` ancestor) and searches by text
-     * inside just that container — avoiding both prior false leads — and
-     * logs the wrapper's actual DOM text on the first attempt so a
-     * continued failure is diagnosable rather than another blind guess.
+     * The employee's search text is generated to be globally unique, so a
+     * plain page-wide text search is actually safe here and sidesteps the
+     * whole "where does the dropdown render" question — it'll find the
+     * suggestion wherever it lives. `getByText` only matches real text
+     * nodes, not form control values, so it won't match the input itself.
      */
     async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
-        const widget = this.employeeNameInput.locator(
-            'xpath=ancestor::*[contains(@class, "oxd-autocomplete")][1]'
-        );
-
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await this.stableFill(this.employeeNameInput, employeeName);
-            const suggestion = widget.getByText(employeeName, { exact: false }).first();
+            const suggestion = this.page.getByText(employeeName, { exact: false }).first();
             const suggestionAppeared = await suggestion
                 .waitFor({ state: 'visible', timeout: 3_000 * attempt })
                 .then(() => true)
@@ -80,21 +76,21 @@ export class AddUserPage extends BasePage {
             }
 
             const value = await this.employeeNameInput.inputValue().catch(() => '');
-            const widgetText = await widget
-                .innerText()
-                .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 300))
-                .catch(() => '(could not read widget)');
             Logger.info(
-                `AddUserPage.selectEmployee(): attempt=${attempt} suggestionAppeared=${suggestionAppeared} ` +
-                    `valueAfterSelection="${value}" widgetText="${widgetText}"`
+                `AddUserPage.selectEmployee(): attempt=${attempt} suggestionAppeared=${suggestionAppeared} valueAfterSelection="${value}"`
             );
 
             if (suggestionAppeared) return;
 
             if (attempt === maxAttempts) {
+                const bodyText = await this.page
+                    .locator('body')
+                    .innerText()
+                    .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 1_000))
+                    .catch(() => '(could not read body)');
+                Logger.info(`AddUserPage.selectEmployee(): final bodyText="${bodyText}"`);
                 throw new Error(
-                    `Could not find a widget-scoped employee suggestion for "${employeeName}" after ${maxAttempts} ` +
-                        `attempts (last widget text: "${widgetText}")`
+                    `Could not find any page text matching "${employeeName}" after ${maxAttempts} attempts`
                 );
             }
         }
