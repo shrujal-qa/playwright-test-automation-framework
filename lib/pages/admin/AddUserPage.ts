@@ -44,8 +44,22 @@ export class AddUserPage extends BasePage {
         await this.selectDropdownOption(this.userRoleDropdown, role);
     }
 
-    async selectEmployee(employeeName: string) {
-        await this.selectAutocompleteOption(this.employeeNameInput, employeeName);
+    /**
+     * A just-created employee has occasionally taken a moment to become
+     * searchable in this autocomplete on the shared demo instance, so a
+     * single attempt is retried a few times with a short pause rather than
+     * failing outright on the first empty suggestion list.
+     */
+    async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                await this.selectAutocompleteOption(this.employeeNameInput, employeeName);
+                return;
+            } catch (error) {
+                if (attempt === maxAttempts) throw error;
+                await this.page.waitForTimeout(2_000);
+            }
+        }
     }
 
     async selectStatus(status: string) {

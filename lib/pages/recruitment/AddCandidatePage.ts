@@ -37,6 +37,14 @@ export class AddCandidatePage extends BasePage {
         await this.stableFill(this.firstNameInput, firstName);
         await this.stableFill(this.lastNameInput, lastName);
         await this.stableFill(this.emailInput, email);
+
+        // Some OrangeHRM versions require a consent checkbox before saving
+        // a candidate. Check it defensively if present — this is a no-op
+        // where the field doesn't exist.
+        const consentCheckbox = this.page.locator('input[type="checkbox"]').first();
+        if ((await consentCheckbox.count()) > 0 && (await consentCheckbox.isVisible())) {
+            await consentCheckbox.check({ force: true }).catch(() => undefined);
+        }
     }
 
     async save() {

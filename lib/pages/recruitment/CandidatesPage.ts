@@ -42,6 +42,30 @@ export class CandidatesPage extends BasePage {
         await this.click(this.searchButton);
     }
 
+    /**
+     * Retries the search a few times before giving up. A just-created
+     * candidate has occasionally taken a moment to become searchable on
+     * the shared demo instance, so a single immediate search is not a
+     * reliable enough signal that creation actually failed.
+     */
+    async searchUntilFound(name: string, maxAttempts = 3, retryDelayMs = 2_000): Promise<void> {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await this.searchByCandidateName(name);
+            const found = await this.tableRows
+                .filter({ hasText: name })
+                .first()
+                .waitFor({ state: 'visible', timeout: 5_000 })
+                .then(() => true)
+                .catch(() => false);
+            if (found) return;
+            if (attempt < maxAttempts) {
+                await this.page.waitForTimeout(retryDelayMs);
+                await this.open();
+            }
+        }
+        throw new Error(`Candidate "${name}" did not appear in the list after ${maxAttempts} search attempts`);
+    }
+
     async deleteCandidateByName(fullName: string) {
         const row = this.tableRows.filter({ hasText: fullName }).first();
         await row.locator('.bi-trash, [class*="trash"]').click();

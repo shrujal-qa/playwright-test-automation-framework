@@ -9,20 +9,24 @@ import { URLS } from '../../../config/urls';
  * and its only actions from there are destructive data purges. This page
  * object intentionally stops at the checkpoint — no purge action is ever
  * triggered by the test suite.
+ *
+ * The checkpoint did not reliably appear when deep-linking straight to a
+ * Maintenance URL (two different guessed URLs both failed against the live
+ * demo), which points to it being gated behind the in-app navigation click
+ * rather than being its own freely-linkable route — so this opens the
+ * module the way a real user would, via the sidebar link.
  */
 export class MaintenancePage extends BasePage {
+    private readonly maintenanceNavLink: Locator;
     private readonly passwordInput: Locator;
-    private readonly continueButton: Locator;
     private readonly errorAlert: Locator;
     private readonly purgeEmployeeRecordsOption: Locator;
 
     constructor(page: Page) {
         super(page);
 
+        this.maintenanceNavLink = page.getByRole('link', { name: 'Maintenance', exact: true });
         this.passwordInput = page.getByRole('textbox', { name: /password/i }).or(page.locator('input[type="password"]'));
-        this.continueButton = page
-            .getByRole('button', { name: /continue|submit|proceed/i })
-            .or(page.locator('button[type="submit"]'));
         this.errorAlert = page.getByRole('alert');
         this.purgeEmployeeRecordsOption = page.getByText('Purge Employee Records', { exact: true });
     }
@@ -32,12 +36,17 @@ export class MaintenancePage extends BasePage {
     ---------------------------- */
 
     async open() {
-        await this.goto(URLS.MAINTENANCE_VALIDATE);
+        await this.goto(URLS.DASHBOARD);
+        await this.click(this.maintenanceNavLink);
     }
 
     async submitCheckpointPassword(password: string) {
         await this.stableFill(this.passwordInput, password);
-        await this.click(this.continueButton);
+        // Submitting via Enter sidesteps needing to know the exact button
+        // label/markup, which has varied between attempts against the
+        // live demo.
+        await this.passwordInput.press('Enter');
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     /* ---------------------------
@@ -45,7 +54,7 @@ export class MaintenancePage extends BasePage {
     ---------------------------- */
 
     async verifyCheckpointDisplayed() {
-        await this.expectVisible(this.continueButton, 'Maintenance security checkpoint should prompt for a password');
+        await this.expectVisible(this.passwordInput, 'Maintenance security checkpoint should prompt for a password');
     }
 
     async verifyCheckpointRejected() {

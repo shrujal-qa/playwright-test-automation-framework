@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
+import { toLeaveDateFormat } from './dateFormat';
 
 export class MyLeavePage extends BasePage {
     private readonly fromDateInput: Locator;
@@ -36,8 +37,8 @@ export class MyLeavePage extends BasePage {
     }
 
     async searchByDateRange(fromDate: string, toDate: string) {
-        await this.stableFill(this.fromDateInput, fromDate);
-        await this.stableFill(this.toDateInput, toDate);
+        await this.stableFill(this.fromDateInput, toLeaveDateFormat(fromDate));
+        await this.stableFill(this.toDateInput, toLeaveDateFormat(toDate));
         await this.click(this.searchButton);
     }
 

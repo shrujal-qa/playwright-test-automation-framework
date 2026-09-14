@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
+import { toLeaveDateFormat } from './dateFormat';
 
 export class ApplyLeavePage extends BasePage {
     private readonly leaveTypeDropdown: Locator;
@@ -77,8 +78,8 @@ export class ApplyLeavePage extends BasePage {
     }
 
     async setDateRange(fromDate: string, toDate: string) {
-        await this.stableFill(this.fromDateInput, fromDate);
-        await this.stableFill(this.toDateInput, toDate);
+        await this.stableFill(this.fromDateInput, toLeaveDateFormat(fromDate));
+        await this.stableFill(this.toDateInput, toLeaveDateFormat(toDate));
     }
 
     async apply() {

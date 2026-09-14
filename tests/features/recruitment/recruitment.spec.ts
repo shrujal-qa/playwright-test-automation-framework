@@ -86,8 +86,7 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
 
             Logger.step('Step 3: Search for the candidate in the list — the strongest proof the save worked');
             await candidates.open();
-            await candidates.searchByCandidateName(fullName);
-            await candidates.verifyRowVisible(fullName);
+            await candidates.searchUntilFound(fullName);
 
             Logger.step('Step 4: Delete the candidate to keep the shared demo clean');
             await candidates.deleteCandidateByName(fullName);
@@ -120,12 +119,9 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
 
             Logger.step('Step 2: Search for the candidate by name');
             await candidates.open();
-            await candidates.searchByCandidateName(fullName);
+            await candidates.searchUntilFound(fullName);
 
-            Logger.step('Step 3: Verify the candidate row appears in the results');
-            await candidates.verifyRowVisible(fullName);
-
-            Logger.step('Step 4: Clean up — delete the created candidate');
+            Logger.step('Step 3: Clean up — delete the created candidate');
             await candidates.deleteCandidateByName(fullName);
 
             Logger.info('✅ Candidate search by name returns the correct record');

@@ -12,7 +12,6 @@ export const URLS = {
     // PIM
     PIM: '/web/index.php/pim/viewEmployeeList',
     PIM_ADD_EMPLOYEE: '/web/index.php/pim/addEmployee',
-    PIM_VIEW_EMPLOYEE: '/web/index.php/pim/viewPersonalDetails/empNumber',
 
     // Leave
     LEAVE: '/web/index.php/leave/viewLeaveList',
@@ -22,7 +21,6 @@ export const URLS = {
 
     // Admin — System Users
     ADMIN_USERS: '/web/index.php/admin/viewSystemUsers',
-    ADMIN_ADD_USER: '/web/index.php/admin/saveSystemUser',
 
     // Recruitment
     RECRUITMENT: '/web/index.php/recruitment/viewCandidates',
@@ -33,8 +31,4 @@ export const URLS = {
 
     // Directory
     DIRECTORY: '/web/index.php/directory/viewDirectory',
-
-    // Maintenance
-    MAINTENANCE: '/web/index.php/maintenance/purgeEmployee',
-    MAINTENANCE_VALIDATE: '/web/index.php/maintenance/validateCredentials',
 } as const;
