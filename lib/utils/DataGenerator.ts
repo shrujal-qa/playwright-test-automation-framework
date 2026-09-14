@@ -7,6 +7,7 @@
  * -------------------------------------------------------
  */
 
+import { randomBytes, randomInt } from 'node:crypto';
 import { APP_CONSTANTS } from '../data/constants/app-constants';
 
 export class DataGenerator {
@@ -14,8 +15,15 @@ export class DataGenerator {
        Core Generators
     ---------------------------- */
 
+    /**
+     * Uses `crypto.randomBytes` rather than `Math.random()` — some of these
+     * identifiers end up as test-account usernames/passwords (see
+     * `DataGenerator.user`), and CodeQL flags `Math.random()` as an
+     * insecure randomness source in that kind of security-sensitive sink.
+     */
     private static uniqueIdentifier(length = 6): string {
-        return `${Date.now()}_${Math.random().toString(36).substring(2, 2 + length)}`;
+        const randomPart = randomBytes(8).toString('hex').substring(0, length);
+        return `${Date.now()}_${randomPart}`;
     }
 
     /* ---------------------------
@@ -52,9 +60,9 @@ export class DataGenerator {
     }
 
     static number(length = 4): string {
-        return Math.floor(
-            Math.pow(10, length - 1) + Math.random() * 9 * Math.pow(10, length - 1)
-        ).toString();
+        const min = Math.pow(10, length - 1);
+        const max = Math.pow(10, length) - 1;
+        return randomInt(min, max + 1).toString();
     }
 
     static phone(): string {
