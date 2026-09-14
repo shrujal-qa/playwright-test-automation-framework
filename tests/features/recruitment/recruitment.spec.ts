@@ -73,8 +73,10 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
             // demo instance's search indexing lag; give it room to do so.
             testInfo.setTimeout(120_000);
 
-            const firstName = DataGenerator.entityName('Candidate');
-            const lastName = DataGenerator.entityName('Applicant');
+            // Add Candidate's Full Name fields reject anything over 30
+            // characters, so these use the shorter generator.
+            const firstName = DataGenerator.shortEntityName('Cand');
+            const lastName = DataGenerator.shortEntityName('App');
             const fullName = `${firstName} ${lastName}`;
             const email = DataGenerator.email('candidate');
 
@@ -108,8 +110,8 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
             );
             testInfo.setTimeout(120_000);
 
-            const firstName = DataGenerator.entityName('Search');
-            const lastName = DataGenerator.entityName('Candidate');
+            const firstName = DataGenerator.shortEntityName('Srch');
+            const lastName = DataGenerator.shortEntityName('Cand');
             const fullName = `${firstName} ${lastName}`;
             const email = DataGenerator.email('search-candidate');
 
@@ -141,8 +143,8 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
                 { type: 'feature', description: 'Recruitment' }
             );
 
-            const firstName = DataGenerator.entityName('Invalid');
-            const lastName = DataGenerator.entityName('Email');
+            const firstName = DataGenerator.shortEntityName('Inv');
+            const lastName = DataGenerator.shortEntityName('Email');
 
             Logger.step('Step 1: Open Add Candidate form');
             const candidates = new CandidatesPage(page);

@@ -18,8 +18,12 @@ import { USER_ROLES } from '../../../lib/data/constants/roles';
  */
 
 async function createDisposableEmployee(page: import('@playwright/test').Page) {
-    const firstName = DataGenerator.entityName('SysUser');
-    const lastName = DataGenerator.entityName('Employee');
+    // Kept short: the Add User "Employee Name" autocomplete search never
+    // returned a suggestion for the full-length entityName() output
+    // (confirmed in CI — the same ~30-character limit Recruitment's Full
+    // Name field enforces explicitly seems to affect this search too).
+    const firstName = DataGenerator.shortEntityName('Sys');
+    const lastName = DataGenerator.shortEntityName('Emp');
     const fullName = `${firstName} ${lastName}`;
 
     const employeeList = new EmployeeListPage(page);

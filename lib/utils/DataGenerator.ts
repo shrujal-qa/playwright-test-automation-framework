@@ -43,6 +43,20 @@ export class DataGenerator {
         return `${APP_CONSTANTS.TEST_PREFIX}_${entityType}_${this.uniqueIdentifier()}`;
     }
 
+    /**
+     * Several name fields across the app (Recruitment's candidate name,
+     * Admin's employee-picker search) reject/mishandle anything longer
+     * than ~30 characters — confirmed in CI via a visible "Should not
+     * exceed 30 characters" validation message and a search widget that
+     * never returned a suggestion for the longer `entityName()` output.
+     * This stays well under that limit while remaining unique: a base-36
+     * timestamp tail plus a couple of random hex bytes.
+     */
+    static shortEntityName(entityType: string): string {
+        const compactId = Date.now().toString(36).slice(-6) + randomBytes(2).toString('hex');
+        return `${APP_CONSTANTS.TEST_PREFIX}${entityType}${compactId}`.slice(0, 30);
+    }
+
     /* ---------------------------
        Helper Data
     ---------------------------- */

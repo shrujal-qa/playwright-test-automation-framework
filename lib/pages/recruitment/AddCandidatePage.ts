@@ -8,6 +8,7 @@ export class AddCandidatePage extends BasePage {
     private readonly firstNameInput: Locator;
     private readonly lastNameInput: Locator;
     private readonly emailInput: Locator;
+    private readonly consentCheckbox: Locator;
     private readonly saveButton: Locator;
     private readonly requiredFieldError: Locator;
     private readonly invalidEmailError: Locator;
@@ -21,6 +22,12 @@ export class AddCandidatePage extends BasePage {
             .locator('.oxd-input-group')
             .filter({ hasText: 'Email' })
             .locator('input');
+        // Confirmed required in CI ("Consent to keep data * Required" was
+        // visible on a failed save) — not optional on this form.
+        this.consentCheckbox = page
+            .locator('.oxd-input-group, .oxd-form-row')
+            .filter({ hasText: 'Consent to keep data' })
+            .locator('input[type="checkbox"]');
         this.saveButton = page.getByRole('button', { name: /save/i });
         this.requiredFieldError = page.getByText('Required').first();
         this.invalidEmailError = page.getByText(MESSAGES.INVALID_EMAIL);
@@ -38,6 +45,15 @@ export class AddCandidatePage extends BasePage {
         await this.stableFill(this.firstNameInput, firstName);
         await this.stableFill(this.lastNameInput, lastName);
         await this.stableFill(this.emailInput, email);
+
+        const consentCount = await this.consentCheckbox.count().catch(() => 0);
+        if (consentCount > 0) {
+            await this.consentCheckbox.first().check({ force: true });
+        } else {
+            // Fall back to the page's only checkbox if the text-based
+            // scoping above doesn't match this form's exact markup.
+            await this.page.locator('input[type="checkbox"]').first().check({ force: true });
+        }
     }
 
     async save() {
