@@ -60,6 +60,9 @@ export class AddUserPage extends BasePage {
 
     async save() {
         await this.click(this.saveButton);
+        // Give the save request and its redirect back to System Users time
+        // to settle before the caller navigates or re-searches.
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     async addUser(params: {

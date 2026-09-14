@@ -20,7 +20,9 @@ export class MaintenancePage extends BasePage {
         super(page);
 
         this.passwordInput = page.getByRole('textbox', { name: /password/i }).or(page.locator('input[type="password"]'));
-        this.continueButton = page.getByRole('button', { name: /continue/i });
+        this.continueButton = page
+            .getByRole('button', { name: /continue|submit|proceed/i })
+            .or(page.locator('button[type="submit"]'));
         this.errorAlert = page.getByRole('alert');
         this.purgeEmployeeRecordsOption = page.getByText('Purge Employee Records', { exact: true });
     }
@@ -30,7 +32,7 @@ export class MaintenancePage extends BasePage {
     ---------------------------- */
 
     async open() {
-        await this.goto(URLS.MAINTENANCE);
+        await this.goto(URLS.MAINTENANCE_VALIDATE);
     }
 
     async submitCheckpointPassword(password: string) {

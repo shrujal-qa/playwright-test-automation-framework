@@ -29,7 +29,7 @@ async function createDisposableEmployee(page: import('@playwright/test').Page) {
     const addEmployee = new AddEmployeePage(page);
     await addEmployee.addEmployee(firstName, lastName);
 
-    return { fullName, employeeList };
+    return { firstName, fullName, employeeList };
 }
 
 test.describe('Admin Tests - System Users List', () => {
@@ -119,7 +119,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const password = 'Pw@12345';
 
             Logger.step('Step 1: Create a disposable employee to link the new user to');
-            const { fullName, employeeList } = await createDisposableEmployee(page);
+            const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
 
             Logger.step(`Step 2: Add a new ESS system user (${username}) for that employee`);
             const systemUsers = new SystemUsersPage(page);
@@ -129,7 +129,9 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const addUser = new AddUserPage(page);
             await addUser.addUser({
                 role: 'ESS',
-                employeeName: fullName,
+                // The Employee Name autocomplete matches more reliably on the
+                // short, unique first name than the full "first last" string.
+                employeeName: firstName,
                 status: 'Enabled',
                 username,
                 password,
@@ -163,7 +165,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const password = 'Pw@12345';
 
             Logger.step('Step 1: Create a disposable employee and linked user');
-            const { fullName, employeeList } = await createDisposableEmployee(page);
+            const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
 
             const systemUsers = new SystemUsersPage(page);
             await systemUsers.open();
@@ -172,7 +174,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const addUser = new AddUserPage(page);
             await addUser.addUser({
                 role: 'ESS',
-                employeeName: fullName,
+                employeeName: firstName,
                 status: 'Enabled',
                 username,
                 password,
@@ -184,8 +186,10 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             await systemUsers.openUserByUsername(username);
             await systemUsers.changeStatusForRow('Disabled');
 
-            Logger.step('Step 3: Verify the status update was saved');
-            await systemUsers.verifyStatusUpdated();
+            Logger.step('Step 3: Verify the status change persisted by re-searching the user');
+            await systemUsers.open();
+            await systemUsers.searchByUsername(username);
+            await systemUsers.verifyRowHasStatus(username, 'Disabled');
 
             Logger.step('Step 4: Clean up — delete the user, then the employee');
             await systemUsers.open();

@@ -1,14 +1,12 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
-import { MESSAGES } from '../../data/constants/messages';
 
 export class ApplyLeavePage extends BasePage {
     private readonly leaveTypeDropdown: Locator;
     private readonly fromDateInput: Locator;
     private readonly toDateInput: Locator;
     private readonly applyButton: Locator;
-    private readonly successToast: Locator;
     private readonly requiredFieldError: Locator;
 
     constructor(page: Page) {
@@ -29,7 +27,6 @@ export class ApplyLeavePage extends BasePage {
             .locator('input')
             .first();
         this.applyButton = page.getByRole('button', { name: /apply/i });
-        this.successToast = page.getByText(MESSAGES.SUCCESSFULLY_SAVED);
         this.requiredFieldError = page.getByText('Required').first();
     }
 
@@ -56,6 +53,29 @@ export class ApplyLeavePage extends BasePage {
         return text;
     }
 
+    /**
+     * Lists every Leave Type option without selecting one. Used by tests
+     * that need to try several types in turn — the demo account's leave
+     * balance per type is outside test control, so a type that looks valid
+     * can still be rejected by the backend for having zero entitlement.
+     */
+    async listLeaveTypeOptions(): Promise<string[]> {
+        await this.click(this.leaveTypeDropdown);
+        const options = this.page.locator('.oxd-select-dropdown [role="option"], .oxd-select-dropdown > div');
+        const count = await options.count();
+        const texts: string[] = [];
+        for (let i = 0; i < count; i++) {
+            texts.push((await options.nth(i).textContent())?.trim() ?? '');
+        }
+        await this.page.keyboard.press('Escape');
+        return texts.filter(Boolean);
+    }
+
+    async selectLeaveTypeByText(leaveType: string) {
+        await this.click(this.leaveTypeDropdown);
+        await this.page.locator('.oxd-select-dropdown').getByText(leaveType, { exact: true }).click();
+    }
+
     async setDateRange(fromDate: string, toDate: string) {
         await this.stableFill(this.fromDateInput, fromDate);
         await this.stableFill(this.toDateInput, toDate);
@@ -63,15 +83,15 @@ export class ApplyLeavePage extends BasePage {
 
     async apply() {
         await this.click(this.applyButton);
+        // Give the apply request (and any resulting redirect) time to
+        // settle before the caller navigates away — a toast is too
+        // transient to rely on as that signal.
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     /* ---------------------------
        Assertions
     ---------------------------- */
-
-    async verifyLeaveApplied() {
-        await this.expectVisible(this.successToast, 'Leave application should show a success toast');
-    }
 
     async verifyRequiredFieldError() {
         await this.expectVisible(this.requiredFieldError, 'Required field validation should be visible');

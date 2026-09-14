@@ -13,7 +13,6 @@ export class SystemUsersPage extends BasePage {
     private readonly confirmDeleteButton: Locator;
     private readonly statusToggleDropdown: Locator;
     private readonly saveButton: Locator;
-    private readonly successToast: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -33,7 +32,6 @@ export class SystemUsersPage extends BasePage {
             .filter({ hasText: 'Status' })
             .locator('.oxd-select-text');
         this.saveButton = page.getByRole('button', { name: /save/i });
-        this.successToast = page.getByText(MESSAGES.SUCCESSFULLY_UPDATED);
     }
 
     /* ---------------------------
@@ -64,6 +62,7 @@ export class SystemUsersPage extends BasePage {
     async changeStatusForRow(status: string) {
         await this.selectDropdownOption(this.statusToggleDropdown, status);
         await this.click(this.saveButton);
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     async deleteUserByUsername(username: string) {
@@ -91,7 +90,17 @@ export class SystemUsersPage extends BasePage {
         await this.expectVisible(this.noRecordsText, 'No Records Found should be shown for an unmatched search');
     }
 
-    async verifyStatusUpdated() {
-        await this.expectVisible(this.successToast, 'Successfully Updated toast should appear after saving');
+    /**
+     * Reads the Status column back from a freshly searched row rather than
+     * trusting a transient save toast — a save-confirmation toast can be
+     * unreliable to catch in CI, so the persisted table state is the
+     * stronger signal that the update actually took effect.
+     */
+    async verifyRowHasStatus(username: string, status: string) {
+        const row = this.tableRows.filter({ hasText: username }).first();
+        await this.expectVisible(
+            row.getByText(status, { exact: true }),
+            `System user ${username} should show status "${status}"`
+        );
     }
 }

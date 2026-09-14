@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { test } from '../../../lib/fixtures';
 import { ApplyLeavePage } from '../../../lib/pages/leave/ApplyLeavePage';
 import { MyLeavePage } from '../../../lib/pages/leave/MyLeavePage';
@@ -15,6 +16,39 @@ import { Logger } from '../../../lib/utils/Logger';
  * that they never collide with another run's in-flight leave request on
  * the shared demo instance.
  */
+
+/**
+ * Applies for leave, trying every available Leave Type in turn until one is
+ * confirmed in My Leave. The demo account's per-type leave balance is
+ * outside test control — a type can be silently rejected for insufficient
+ * balance — so success is verified structurally (the row appears in My
+ * Leave) rather than by trusting a save-confirmation toast.
+ */
+async function applyForAvailableLeaveType(page: Page, fromDate: string, toDate: string): Promise<string> {
+    const applyLeave = new ApplyLeavePage(page);
+    const myLeave = new MyLeavePage(page);
+
+    await applyLeave.open();
+    const leaveTypes = await applyLeave.listLeaveTypeOptions();
+
+    for (const leaveType of leaveTypes) {
+        await applyLeave.open();
+        await applyLeave.selectLeaveTypeByText(leaveType);
+        await applyLeave.setDateRange(fromDate, toDate);
+        await applyLeave.apply();
+
+        await myLeave.open();
+        await myLeave.searchByDateRange(fromDate, toDate);
+        if (await myLeave.hasLeaveRequest(leaveType)) {
+            return leaveType;
+        }
+    }
+
+    throw new Error(
+        `Could not apply for leave with any available leave type (tried: ${leaveTypes.join(', ')}). ` +
+            'This usually means the demo account has no remaining balance for any leave type.'
+    );
+}
 
 test.describe('Leave Tests - Apply Leave', () => {
     test(
@@ -50,21 +84,10 @@ test.describe('Leave Tests - Apply Leave', () => {
             const fromDate = DataGenerator.date(60);
             const toDate = DataGenerator.date(60);
 
-            Logger.step('Step 1: Navigate to Apply Leave');
-            const applyLeave = new ApplyLeavePage(page);
-            await applyLeave.open();
+            Logger.step('Step 1: Apply for leave, trying leave types until one has balance');
+            const leaveType = await applyForAvailableLeaveType(page, fromDate, toDate);
 
-            Logger.step('Step 2: Select the first available leave type and date range');
-            await applyLeave.selectFirstAvailableLeaveType();
-            await applyLeave.setDateRange(fromDate, toDate);
-
-            Logger.step('Step 3: Submit the leave request');
-            await applyLeave.apply();
-
-            Logger.step('Step 4: Verify the leave request was saved');
-            await applyLeave.verifyLeaveApplied();
-
-            Logger.info(`✅ Leave applied successfully for ${fromDate} - ${toDate}`);
+            Logger.info(`✅ Leave applied successfully (${leaveType}) for ${fromDate} - ${toDate}`);
         }
     );
 
@@ -137,15 +160,10 @@ test.describe('Leave Tests - My Leave', () => {
             const fromDate = DataGenerator.date(75);
             const toDate = DataGenerator.date(75);
 
-            Logger.step('Step 1: Apply for leave');
-            const applyLeave = new ApplyLeavePage(page);
-            await applyLeave.open();
-            const leaveType = await applyLeave.selectFirstAvailableLeaveType();
-            await applyLeave.setDateRange(fromDate, toDate);
-            await applyLeave.apply();
-            await applyLeave.verifyLeaveApplied();
+            Logger.step('Step 1: Apply for leave, trying leave types until one has balance');
+            const leaveType = await applyForAvailableLeaveType(page, fromDate, toDate);
 
-            Logger.step('Step 2: Open My Leave and search for the same date range');
+            Logger.step('Step 2: Re-open My Leave and search for the same date range');
             const myLeave = new MyLeavePage(page);
             await myLeave.open();
             await myLeave.searchByDateRange(fromDate, toDate);
@@ -171,15 +189,10 @@ test.describe('Leave Tests - My Leave', () => {
             const fromDate = DataGenerator.date(80);
             const toDate = DataGenerator.date(80);
 
-            Logger.step('Step 1: Apply for leave');
-            const applyLeave = new ApplyLeavePage(page);
-            await applyLeave.open();
-            const leaveType = await applyLeave.selectFirstAvailableLeaveType();
-            await applyLeave.setDateRange(fromDate, toDate);
-            await applyLeave.apply();
-            await applyLeave.verifyLeaveApplied();
+            Logger.step('Step 1: Apply for leave, trying leave types until one has balance');
+            const leaveType = await applyForAvailableLeaveType(page, fromDate, toDate);
 
-            Logger.step('Step 2: Open My Leave and locate the request');
+            Logger.step('Step 2: Re-open My Leave and locate the request');
             const myLeave = new MyLeavePage(page);
             await myLeave.open();
             await myLeave.searchByDateRange(fromDate, toDate);

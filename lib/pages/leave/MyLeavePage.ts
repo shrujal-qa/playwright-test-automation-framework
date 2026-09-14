@@ -47,6 +47,20 @@ export class MyLeavePage extends BasePage {
         await this.click(this.confirmCancelButton);
     }
 
+    /**
+     * Non-throwing check used to probe whether a just-applied leave type
+     * actually landed (vs. being silently rejected for insufficient
+     * balance) — lets a caller try the next leave type instead of failing.
+     */
+    async hasLeaveRequest(text: string, timeout = 5_000): Promise<boolean> {
+        return this.tableRows
+            .filter({ hasText: text })
+            .first()
+            .waitFor({ state: 'visible', timeout })
+            .then(() => true)
+            .catch(() => false);
+    }
+
     /* ---------------------------
        Assertions
     ---------------------------- */

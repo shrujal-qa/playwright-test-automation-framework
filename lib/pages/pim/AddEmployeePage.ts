@@ -37,6 +37,9 @@ export class AddEmployeePage extends BasePage {
 
     async save() {
         await this.click(this.saveButton);
+        // Give the save request and its redirect to Personal Details time
+        // to settle before the caller asserts on the destination page.
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     async addEmployee(firstName: string, lastName: string, middleName = '') {

@@ -204,8 +204,8 @@ test.describe('PIM Tests - Add / Edit / Delete Employee', () => {
             await profile.setNationality('American');
             await profile.save();
 
-            Logger.step('Step 3: Verify the update was saved');
-            await profile.verifyUpdateSaved();
+            Logger.step('Step 3: Reload and verify the nationality actually persisted');
+            await profile.verifyNationalityIs('American');
 
             Logger.step('Step 4: Clean up — delete the created employee');
             await employeeList.open();

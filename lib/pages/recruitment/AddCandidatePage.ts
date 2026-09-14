@@ -10,7 +10,6 @@ export class AddCandidatePage extends BasePage {
     private readonly saveButton: Locator;
     private readonly requiredFieldError: Locator;
     private readonly invalidEmailError: Locator;
-    private readonly successToast: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -24,7 +23,6 @@ export class AddCandidatePage extends BasePage {
         this.saveButton = page.getByRole('button', { name: /save/i });
         this.requiredFieldError = page.getByText('Required').first();
         this.invalidEmailError = page.getByText(MESSAGES.INVALID_EMAIL);
-        this.successToast = page.getByText(MESSAGES.SUCCESSFULLY_SAVED);
     }
 
     /* ---------------------------
@@ -43,6 +41,10 @@ export class AddCandidatePage extends BasePage {
 
     async save() {
         await this.click(this.saveButton);
+        // Give the save request (and any resulting redirect) time to settle
+        // before the caller navigates away — a toast is too transient to
+        // rely on as that signal.
+        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
     }
 
     async addCandidate(firstName: string, lastName: string, email: string) {
@@ -60,9 +62,5 @@ export class AddCandidatePage extends BasePage {
 
     async verifyInvalidEmailError() {
         await this.expectVisible(this.invalidEmailError, 'Invalid email validation should be visible');
-    }
-
-    async verifyCandidateSaved() {
-        await this.expectVisible(this.successToast, 'Candidate should be saved with a success toast');
     }
 }

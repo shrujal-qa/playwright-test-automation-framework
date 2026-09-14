@@ -84,15 +84,12 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
             const addCandidate = new AddCandidatePage(page);
             await addCandidate.addCandidate(firstName, lastName, email);
 
-            Logger.step('Step 3: Verify the candidate was saved');
-            await addCandidate.verifyCandidateSaved();
-
-            Logger.step('Step 4: Search for the candidate in the list');
+            Logger.step('Step 3: Search for the candidate in the list — the strongest proof the save worked');
             await candidates.open();
             await candidates.searchByCandidateName(fullName);
             await candidates.verifyRowVisible(fullName);
 
-            Logger.step('Step 5: Delete the candidate to keep the shared demo clean');
+            Logger.step('Step 4: Delete the candidate to keep the shared demo clean');
             await candidates.deleteCandidateByName(fullName);
 
             Logger.info(`✅ Candidate ${fullName} created, verified and deleted successfully`);
@@ -120,7 +117,6 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
 
             const addCandidate = new AddCandidatePage(page);
             await addCandidate.addCandidate(firstName, lastName, email);
-            await addCandidate.verifyCandidateSaved();
 
             Logger.step('Step 2: Search for the candidate by name');
             await candidates.open();
