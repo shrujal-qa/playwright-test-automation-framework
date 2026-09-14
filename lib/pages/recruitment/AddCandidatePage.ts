@@ -2,6 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
 import { MESSAGES } from '../../data/constants/messages';
+import { Logger } from '../../utils/Logger';
 
 export class AddCandidatePage extends BasePage {
     private readonly firstNameInput: Locator;
@@ -53,6 +54,15 @@ export class AddCandidatePage extends BasePage {
         // before the caller navigates away — a toast is too transient to
         // rely on as that signal.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
+
+        // The downstream "does it show up in the list" check has failed
+        // in CI without an obvious cause. Log what's actually on screen
+        // right after save so a future failure is diagnosable from the
+        // CI log instead of requiring another guess-and-push round.
+        const stillHasRequiredError = await this.requiredFieldError.isVisible().catch(() => false);
+        Logger.info(
+            `AddCandidatePage.save(): url=${this.page.url()} requiredFieldVisible=${stillHasRequiredError}`
+        );
     }
 
     async addCandidate(firstName: string, lastName: string, email: string) {

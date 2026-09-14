@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, expect } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
 import { toLeaveDateFormat } from './dateFormat';
@@ -77,9 +77,21 @@ export class ApplyLeavePage extends BasePage {
         await this.page.locator('.oxd-select-dropdown').getByText(leaveType, { exact: true }).click();
     }
 
+    /**
+     * These date inputs have their own input mask that fights with
+     * `stableFill`'s keystroke-by-keystroke typing (observed corrupting
+     * the value in CI). `Locator.fill` sets the value atomically instead,
+     * which this masked widget handles correctly.
+     */
+    private async fillDateField(locator: Locator, value: string) {
+        await locator.waitFor({ state: 'visible' });
+        await locator.fill(value);
+        await expect(locator).toHaveValue(value, { timeout: 5_000 });
+    }
+
     async setDateRange(fromDate: string, toDate: string) {
-        await this.stableFill(this.fromDateInput, toLeaveDateFormat(fromDate));
-        await this.stableFill(this.toDateInput, toLeaveDateFormat(toDate));
+        await this.fillDateField(this.fromDateInput, toLeaveDateFormat(fromDate));
+        await this.fillDateField(this.toDateInput, toLeaveDateFormat(toDate));
     }
 
     async apply() {

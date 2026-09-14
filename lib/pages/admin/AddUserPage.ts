@@ -45,21 +45,18 @@ export class AddUserPage extends BasePage {
     }
 
     /**
-     * A just-created employee has occasionally taken a moment to become
-     * searchable in this autocomplete on the shared demo instance, so a
-     * single attempt is retried a few times with a short pause rather than
-     * failing outright on the first empty suggestion list.
+     * This widget's suggestion list never matched the `.oxd-autocomplete-
+     * dropdown` container that works for every other autocomplete field in
+     * the app (confirmed by repeated CI failures, not a timing issue —
+     * retrying the same wait did not help). Selecting via keyboard instead
+     * (arrow down to the first match, then Enter) works with any dropdown
+     * markup, since it doesn't need to locate the suggestion element at all.
      */
-    async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                await this.selectAutocompleteOption(this.employeeNameInput, employeeName);
-                return;
-            } catch (error) {
-                if (attempt === maxAttempts) throw error;
-                await this.page.waitForTimeout(2_000);
-            }
-        }
+    async selectEmployee(employeeName: string): Promise<void> {
+        await this.stableFill(this.employeeNameInput, employeeName);
+        await this.page.waitForTimeout(1_000); // let the debounced suggestion search resolve
+        await this.employeeNameInput.press('ArrowDown');
+        await this.employeeNameInput.press('Enter');
     }
 
     async selectStatus(status: string) {
