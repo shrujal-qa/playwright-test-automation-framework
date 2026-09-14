@@ -114,6 +114,9 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
                 { type: 'feature', description: 'Admin' },
                 { type: 'story', description: 'ADM-002: System user CRUD lifecycle' }
             );
+            // The employee picker and post-creation search may each retry
+            // a few times against the shared demo instance; give it room.
+            testInfo.setTimeout(120_000);
 
             const username = DataGenerator.user('ESS');
             const password = 'Pw@12345';
@@ -139,8 +142,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
 
             Logger.step('Step 3: Verify the new user appears in the System Users list');
             await systemUsers.open();
-            await systemUsers.searchByUsername(username);
-            await systemUsers.verifyRowVisible(username);
+            await systemUsers.searchUntilFound(username);
 
             Logger.step('Step 4: Clean up — delete the user, then the employee');
             await systemUsers.deleteUserByUsername(username);
@@ -160,6 +162,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
                 { type: 'severity', description: 'critical' },
                 { type: 'feature', description: 'Admin' }
             );
+            testInfo.setTimeout(120_000);
 
             const username = DataGenerator.user('Status');
             const password = 'Pw@12345';
@@ -182,7 +185,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
 
             Logger.step('Step 2: Open the user and change its status to Disabled');
             await systemUsers.open();
-            await systemUsers.searchByUsername(username);
+            await systemUsers.searchUntilFound(username);
             await systemUsers.openUserByUsername(username);
             await systemUsers.changeStatusForRow('Disabled');
 

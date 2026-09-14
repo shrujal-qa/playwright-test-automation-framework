@@ -51,6 +51,30 @@ export class SystemUsersPage extends BasePage {
         await this.click(this.searchButton);
     }
 
+    /**
+     * Retries the search a few times before giving up. A just-created user
+     * has occasionally taken a moment to become searchable on the shared
+     * demo instance, so a single immediate search is not a reliable
+     * enough signal that creation actually failed.
+     */
+    async searchUntilFound(username: string, maxAttempts = 5, retryDelayMs = 3_000): Promise<void> {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await this.searchByUsername(username);
+            const found = await this.tableRows
+                .filter({ hasText: username })
+                .first()
+                .waitFor({ state: 'visible', timeout: 5_000 })
+                .then(() => true)
+                .catch(() => false);
+            if (found) return;
+            if (attempt < maxAttempts) {
+                await this.page.waitForTimeout(retryDelayMs);
+                await this.open();
+            }
+        }
+        throw new Error(`System user "${username}" did not appear in the list after ${maxAttempts} search attempts`);
+    }
+
     async resetFilters() {
         await this.click(this.resetButton);
     }

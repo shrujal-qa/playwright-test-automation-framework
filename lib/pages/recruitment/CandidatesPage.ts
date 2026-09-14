@@ -48,7 +48,7 @@ export class CandidatesPage extends BasePage {
      * the shared demo instance, so a single immediate search is not a
      * reliable enough signal that creation actually failed.
      */
-    async searchUntilFound(name: string, maxAttempts = 3, retryDelayMs = 2_000): Promise<void> {
+    async searchUntilFound(name: string, maxAttempts = 5, retryDelayMs = 3_000): Promise<void> {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await this.searchByCandidateName(name);
             const found = await this.tableRows

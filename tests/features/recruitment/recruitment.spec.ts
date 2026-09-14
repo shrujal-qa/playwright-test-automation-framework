@@ -69,6 +69,9 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
                 { type: 'feature', description: 'Recruitment' },
                 { type: 'story', description: 'REC-002: Candidate CRUD lifecycle' }
             );
+            // searchUntilFound may retry several times against the shared
+            // demo instance's search indexing lag; give it room to do so.
+            testInfo.setTimeout(120_000);
 
             const firstName = DataGenerator.entityName('Candidate');
             const lastName = DataGenerator.entityName('Applicant');
@@ -103,6 +106,7 @@ test.describe('Recruitment Tests - Add / Search / Delete Candidate', () => {
                 { type: 'severity', description: 'normal' },
                 { type: 'feature', description: 'Recruitment' }
             );
+            testInfo.setTimeout(120_000);
 
             const firstName = DataGenerator.entityName('Search');
             const lastName = DataGenerator.entityName('Candidate');

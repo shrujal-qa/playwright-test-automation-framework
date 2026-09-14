@@ -46,20 +46,20 @@ export class AddUserPage extends BasePage {
     }
 
     /**
-     * The prior keyboard-only approach (ArrowDown + Enter with no visible
-     * suggestion check) "succeeded" on every attempt because the field's
-     * value is already non-empty from the typed search text — that check
-     * couldn't tell a real selection apart from Enter doing nothing. This
-     * now waits for an ARIA `option` (a different, standards-based
-     * strategy from the `.oxd-autocomplete-dropdown` class match that
-     * never worked here) and clicks it directly; if none ever appears, it
-     * logs that fact explicitly instead of silently treating leftover
-     * typed text as a successful selection.
+     * `page.getByRole('option').first()` matched *something* (proven by
+     * the CI log), but the field's value never changed — meaning it was
+     * clicking a stale/unrelated option element elsewhere on the page
+     * (e.g. a remnant from the User Role dropdown filled just before this),
+     * not the real employee suggestion. Scoping to options that appear
+     * *after* this input in the DOM avoids that, and success is now judged
+     * purely by whether the value actually grew — not by whether some
+     * "option" happened to be clicked.
      */
     async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
+        const option = this.employeeNameInput.locator('xpath=following::*[@role="option"][1]');
+
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await this.stableFill(this.employeeNameInput, employeeName);
-            const option = this.page.getByRole('option').first();
             const optionAppeared = await option
                 .waitFor({ state: 'visible', timeout: 3_000 * attempt })
                 .then(() => true)
@@ -79,8 +79,7 @@ export class AddUserPage extends BasePage {
 
             // A real selection replaces the typed search text with the
             // matched employee's full name (longer than what we typed).
-            // The typed text unchanged means nothing was actually selected.
-            if (optionAppeared || value.trim().length > employeeName.length) return;
+            if (value.trim().length > employeeName.length) return;
 
             if (attempt === maxAttempts) {
                 throw new Error(
