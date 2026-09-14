@@ -47,9 +47,10 @@ lib/
       messages.ts             # User-facing strings (alerts, toasts)
       ui-constants.ts         # Labels, buttons, menu options
       app-constants.ts        # Storage path, timeouts, role permissions
+      admin-constants.ts      # SYSTEM_USER_ROLE / SYSTEM_USER_STATUS (Admin → User Management)
 
   fixtures/
-    base.fixture.ts           # loginPage, dashboardPage (page objects only)
+    base.fixture.ts           # loginPage, dashboardPage, userManagementPage (page objects only)
     auth.fixture.ts           # loginAs(role), userPage, adminPage
     index.ts                  # mergeTests entry point
 
@@ -57,19 +58,24 @@ lib/
     AssertionHelper.ts        # Business assertions (URL, role visibility, …)
 
   pages/
-    base/BasePage.ts          # goto, click, stableFill, expectVisible
+    base/BasePage.ts          # goto, click, stableFill, expectVisible,
+                               # + OXD helpers: fieldGroup/inputByLabel/selectByLabel,
+                               #   selectDropdownOption, selectAutocompleteOption,
+                               #   expectToast, waitForTableLoad
     auth/LoginPage.ts
     dashboard/DashboardPage.ts
+    admin/UserManagementPage.ts
 
   utils/
     Logger.ts                 # Timestamped, level-tagged console logging
     Wait.ts                   # Explicit waits (URL, visible, hidden, until)
-    DataGenerator.ts          # PW_{Entity}_{UniqueId} pattern
+    DataGenerator.ts          # PW_{Entity}_{UniqueId} pattern, password()
 
 specs/
   setup/auth.setup.ts         # One-time login; persists storage state
   features/auth/login.spec.ts
   features/dashboard/dashboard.spec.ts
+  features/admin/user-management.spec.ts
 ```
 
 ---
@@ -100,8 +106,19 @@ Page Objects encapsulate the **structure and interactions** of a single screen.
     - `stableFill(locator, value)` — clears via real keyboard input, types
       sequentially, then asserts `toHaveValue` to prevent silent failures
     - `expectVisible` / `expectText` — thin wrappers over Playwright `expect`
-- **Concrete pages** (`LoginPage`, `DashboardPage`) declare locators as
-  `readonly` fields and expose `async` actions / verifications.
+    - `fieldGroup(label)` / `inputByLabel(label)` / `selectByLabel(label)` —
+      locate an OXD `.oxd-input-group` field by its visible label instead of
+      a fragile structural selector (every OrangeHRM module renders labeled
+      fields this way)
+    - `selectDropdownOption(dropdown, text)` / `selectAutocompleteOption(input, search, exact?)`
+      — drive OXD `<select>`-style dropdowns and autocomplete inputs
+    - `expectToast(message)` — asserts the OXD toast notification text
+    - `waitForTableLoad()` — waits out the `.oxd-table-loader` spinner shown
+      while a list re-fetches (search/reset/sort); avoids a race where the
+      row count is read before the async refresh completes
+- **Concrete pages** (`LoginPage`, `DashboardPage`, `UserManagementPage`)
+  declare locators as `readonly` fields and expose `async` actions /
+  verifications.
 
 **Rule:** Page objects don't know about test data or env variables — they
 receive everything as arguments.
@@ -115,7 +132,7 @@ underlying page objects. It is split into two files:
 
 | File                | Provides                                                              |
 | ------------------- | --------------------------------------------------------------------- |
-| `base.fixture.ts`   | `loginPage`, `dashboardPage` — page objects bound to the active page  |
+| `base.fixture.ts`   | `loginPage`, `dashboardPage`, `userManagementPage` — page objects bound to the active page |
 | `auth.fixture.ts`   | `loginAs(role)`, `userPage`, `adminPage` — authenticated contexts     |
 | `index.ts`          | Merges both fixtures into a single `test` export                       |
 

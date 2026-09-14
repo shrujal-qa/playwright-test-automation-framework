@@ -61,6 +61,11 @@ export class DataGenerator {
         return `9${this.number(9)}`;
     }
 
+    /** Meets OrangeHRM's password composition guidance (upper, lower, digit, symbol). */
+    static password(): string {
+        return `Pw_${this.uniqueIdentifier(6)}!A1`;
+    }
+
     static date(offsetDays = 0): string {
         const date = new Date();
         date.setDate(date.getDate() + offsetDays);

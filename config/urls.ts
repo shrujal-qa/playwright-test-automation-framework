@@ -12,4 +12,7 @@ export const URLS = {
     // Modules
     PIM: '/web/index.php/pim/viewEmployeeList',
     LEAVE: '/web/index.php/leave/viewLeaveList',
+
+    // Admin
+    ADMIN_USER_LIST: '/web/index.php/admin/viewSystemUsers',
 } as const;

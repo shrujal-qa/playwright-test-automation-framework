@@ -11,21 +11,21 @@ severity, and intent — so it stays readable as the suite grows.
 
 | Metric           | Value |
 | ---------------- | ----- |
-| Total test cases | **19**  |
-| Smoke            | 8     |
-| Regression       | 19    |
-| Critical         | 4     |
-| Negative         | 3     |
-| Validation       | 3     |
+| Total test cases | **32**  |
+| Smoke            | 10    |
+| Regression       | 32    |
+| Critical         | 5     |
+| Negative         | 7     |
+| Validation       | 7     |
 | RBAC             | 2     |
 
 Approximate execution time on a single worker against the OrangeHRM demo:
 
 | Suite            | Tests | Duration       |
 | ---------------- | ----- | -------------- |
-| `@smoke`         | 8     | ~2-3 min       |
-| `@regression`    | 19    | ~8-10 min      |
-| Full run (incl. setup) | 20+ | ~10-12 min  |
+| `@smoke`         | 10    | ~3-4 min       |
+| `@regression`    | 32    | ~13-16 min     |
+| Full run (incl. setup) | 33+ | ~14-18 min  |
 
 CI shards regression across two runners, cutting wall-clock time roughly in half.
 
@@ -106,6 +106,54 @@ CI shards regression across two runners, cutting wall-clock time roughly in half
 
 ---
 
+## Admin — User Management (`specs/features/admin/user-management.spec.ts`)
+
+The public OrangeHRM demo is shared with other testers worldwide, so every
+scenario that creates data uses a `DataGenerator`-produced unique username
+and deletes it before the test ends; scenarios that read shared data assert
+structural invariants (every visible row matches the filter) instead of
+absolute record counts.
+
+### View & navigation
+
+| Test ID           | Title                                    | Tags                  | Severity |
+| ------------------ | ---------------------------------------- | ---------------------- | -------- |
+| `ADMIN-USER-001`  | Admin can view the System Users list     | `@smoke @regression @admin` | Normal |
+
+### CRUD lifecycle
+
+| Test ID           | Title                                                          | Tags                                        | Severity |
+| ------------------ | --------------------------------------------------------------- | -------------------------------------------- | -------- |
+| `ADMIN-USER-002`  | Create, find, and delete a system user (full lifecycle)         | `@smoke @regression @critical @admin @e2e`  | Critical |
+| `ADMIN-USER-003`  | Edit an existing user's status                                   | `@regression @admin`                        | Normal   |
+| `ADMIN-USER-008`  | Cancel on Add User form discards changes                         | `@regression @admin`                        | Normal   |
+
+### Search & filter
+
+| Test ID           | Title                                                | Tags                   | Severity |
+| ------------------ | ------------------------------------------------------ | ------------------------ | -------- |
+| `ADMIN-USER-004`  | Search by username returns only the matching record   | `@regression @admin`   | Normal   |
+| `ADMIN-USER-005`  | Search by User Role filters the list correctly         | `@regression @admin`   | Normal   |
+| `ADMIN-USER-006`  | Search by Status filters the list correctly            | `@regression @admin`   | Normal   |
+| `ADMIN-USER-007`  | Reset clears applied filters                            | `@regression @admin`   | Normal   |
+
+### Negative & validation
+
+| Test ID           | Title                                                      | Tags                                          | Severity |
+| ------------------ | ------------------------------------------------------------ | ------------------------------------------------ | -------- |
+| `ADMIN-USER-101`  | Empty Add User form shows field-level validation             | `@regression @negative @validation @admin`      | Normal   |
+| `ADMIN-USER-102`  | Duplicate username is rejected                               | `@regression @negative @admin`                  | Normal   |
+| `ADMIN-USER-103`  | Unselected Employee Name is rejected as invalid               | `@regression @negative @validation @admin`      | Normal   |
+| `ADMIN-USER-104`  | Mismatched password and confirm password is rejected          | `@regression @negative @validation @admin`      | Normal   |
+
+**Known gap:** true role-based access restriction (an ESS-role login being
+blocked from the Admin menu) is not covered — the framework's `USER` and
+`ADMIN` fixtures currently resolve to the same demo `Admin` credentials via
+`.env`. Add a distinct ESS credential to `.env` / `lib/data/users.ts` to
+close this gap.
+
+---
+
 ## Execution recipes
 
 ```bash
@@ -119,9 +167,11 @@ npm run test:rbac
 # Run a single feature
 npx playwright test specs/features/auth/login.spec.ts
 npx playwright test specs/features/dashboard/dashboard.spec.ts
+npx playwright test specs/features/admin/
 
 # Run by Test ID prefix (e.g. all AUTH-1xx negative tests)
 npx playwright test --grep "AUTH-10"
+npx playwright test --grep "ADMIN-USER-"
 ```
 
 ---
@@ -144,6 +194,7 @@ See [CONTRIBUTING → Adding New Tests](../CONTRIBUTING.md#adding-new-tests).
 
 Planned expansion (contributions welcome):
 
+- [x] **Admin module** — System User CRUD, search/filter, validation
 - [ ] **PIM module** — employee CRUD coverage
 - [ ] **Leave module** — apply / approve / cancel flows
 - [ ] **Time module** — timesheet submission
