@@ -2,6 +2,7 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { URLS } from '../../../config/urls';
 import { MESSAGES } from '../../data/constants/messages';
+import { Logger } from '../../utils/Logger';
 
 export class CandidatesPage extends BasePage {
     private readonly addButton: Locator;
@@ -63,6 +64,20 @@ export class CandidatesPage extends BasePage {
                 await this.open();
             }
         }
+
+        // Exhausted every retry with no clear cause from prior rounds —
+        // log whether the list is genuinely empty (No Records Found) or
+        // showing something else entirely, and how many rows exist at all.
+        const noRecords = await this.noRecordsText.isVisible().catch(() => false);
+        const rowCount = await this.tableRows.count().catch(() => -1);
+        const bodyText = await this.page
+            .locator('body')
+            .innerText()
+            .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 1_000))
+            .catch(() => '(could not read body)');
+        Logger.info(
+            `CandidatesPage.searchUntilFound(): gave up on "${name}" — noRecordsFound=${noRecords} rowCount=${rowCount} bodyText="${bodyText}"`
+        );
         throw new Error(`Candidate "${name}" did not appear in the list after ${maxAttempts} search attempts`);
     }
 

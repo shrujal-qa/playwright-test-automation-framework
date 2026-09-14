@@ -46,45 +46,55 @@ export class AddUserPage extends BasePage {
     }
 
     /**
-     * `page.getByRole('option').first()` matched *something* (proven by
-     * the CI log), but the field's value never changed — meaning it was
-     * clicking a stale/unrelated option element elsewhere on the page
-     * (e.g. a remnant from the User Role dropdown filled just before this),
-     * not the real employee suggestion. Scoping to options that appear
-     * *after* this input in the DOM avoids that, and success is now judged
-     * purely by whether the value actually grew — not by whether some
-     * "option" happened to be clicked.
+     * Two prior strategies both failed identically (value never changes):
+     * a `.oxd-autocomplete-dropdown` class match found nothing at all, and
+     * a page-wide `role="option"` query found *something* but clicking it
+     * never affected the field — most likely a native, visually-hidden
+     * `<select><option>` elsewhere on the page that satisfies the ARIA
+     * role query without being the real suggestion widget at all.
+     *
+     * This scopes to the widget's own wrapper (walking up from the input
+     * to its nearest `.oxd-autocomplete*` ancestor) and searches by text
+     * inside just that container — avoiding both prior false leads — and
+     * logs the wrapper's actual DOM text on the first attempt so a
+     * continued failure is diagnosable rather than another blind guess.
      */
     async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
-        const option = this.employeeNameInput.locator('xpath=following::*[@role="option"][1]');
+        const widget = this.employeeNameInput.locator(
+            'xpath=ancestor::*[contains(@class, "oxd-autocomplete")][1]'
+        );
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await this.stableFill(this.employeeNameInput, employeeName);
-            const optionAppeared = await option
+            const suggestion = widget.getByText(employeeName, { exact: false }).first();
+            const suggestionAppeared = await suggestion
                 .waitFor({ state: 'visible', timeout: 3_000 * attempt })
                 .then(() => true)
                 .catch(() => false);
 
-            if (optionAppeared) {
-                await option.click();
+            if (suggestionAppeared) {
+                await suggestion.click();
             } else {
                 await this.employeeNameInput.press('ArrowDown');
                 await this.employeeNameInput.press('Enter');
             }
 
             const value = await this.employeeNameInput.inputValue().catch(() => '');
+            const widgetText = await widget
+                .innerText()
+                .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 300))
+                .catch(() => '(could not read widget)');
             Logger.info(
-                `AddUserPage.selectEmployee(): attempt=${attempt} optionRoleAppeared=${optionAppeared} valueAfterSelection="${value}"`
+                `AddUserPage.selectEmployee(): attempt=${attempt} suggestionAppeared=${suggestionAppeared} ` +
+                    `valueAfterSelection="${value}" widgetText="${widgetText}"`
             );
 
-            // A real selection replaces the typed search text with the
-            // matched employee's full name (longer than what we typed).
-            if (value.trim().length > employeeName.length) return;
+            if (suggestionAppeared) return;
 
             if (attempt === maxAttempts) {
                 throw new Error(
-                    `Could not select a real employee suggestion for "${employeeName}" after ${maxAttempts} attempts ` +
-                        `(field value stayed "${value}")`
+                    `Could not find a widget-scoped employee suggestion for "${employeeName}" after ${maxAttempts} ` +
+                        `attempts (last widget text: "${widgetText}")`
                 );
             }
         }
@@ -107,14 +117,17 @@ export class AddUserPage extends BasePage {
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
 
         // ADM-002 has failed downstream (created user not found by search)
-        // without an obvious cause — the employee picker itself now
-        // verifies it populated a value, so the blocker is something else.
+        // with no Required error visible either — dump a broader snapshot
+        // of the page so a continued failure is finally diagnosable.
         const contexts = await this.describeRequiredFieldErrors();
-        if (contexts.length > 0) {
-            Logger.info(
-                `AddUserPage.save(): still on ${this.page.url()} — Required error(s): ${JSON.stringify(contexts)}`
-            );
-        }
+        const bodyText = await this.page
+            .locator('body')
+            .innerText()
+            .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 1_000))
+            .catch(() => '(could not read body)');
+        Logger.info(
+            `AddUserPage.save(): url=${this.page.url()} requiredErrors=${JSON.stringify(contexts)} bodyText="${bodyText}"`
+        );
     }
 
     async addUser(params: {

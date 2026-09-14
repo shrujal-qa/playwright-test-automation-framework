@@ -47,15 +47,19 @@ export class AddCandidatePage extends BasePage {
         // rely on as that signal.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
 
-        // Confirmed in CI that save silently fails validation (stays on
-        // addCandidate with a Required error) but not *which* field —
-        // the previous ancestor-based lookup itself failed to resolve.
+        // The candidate has failed to show up in search afterward with no
+        // Required error either — a full run's retries exhausted without
+        // finding it. Dump a broader page snapshot so this is finally
+        // diagnosable instead of another guess.
         const contexts = await this.describeRequiredFieldErrors();
-        if (contexts.length > 0) {
-            Logger.info(
-                `AddCandidatePage.save(): still on ${this.page.url()} — Required error(s): ${JSON.stringify(contexts)}`
-            );
-        }
+        const bodyText = await this.page
+            .locator('body')
+            .innerText()
+            .then((text) => text.replace(/\s+/g, ' ').trim().slice(0, 1_000))
+            .catch(() => '(could not read body)');
+        Logger.info(
+            `AddCandidatePage.save(): url=${this.page.url()} requiredErrors=${JSON.stringify(contexts)} bodyText="${bodyText}"`
+        );
     }
 
     async addCandidate(firstName: string, lastName: string, email: string) {
