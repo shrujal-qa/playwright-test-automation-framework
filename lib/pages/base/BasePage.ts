@@ -50,4 +50,28 @@ export abstract class BasePage {
     async expectText(locator: Locator, text: string, message?: string) {
         await expect(locator, message).toHaveText(text);
     }
+
+    /* ============================
+       🔽 OXD CUSTOM DROPDOWN / AUTOCOMPLETE
+       OrangeHRM's `.oxd-select-text` widgets are not native <select>
+       elements, so they need a click-then-pick interaction instead of
+       Playwright's `selectOption`.
+    ============================ */
+    async selectDropdownOption(dropdown: Locator, optionText: string) {
+        await this.click(dropdown);
+        await this.page
+            .locator('.oxd-select-dropdown')
+            .getByText(optionText, { exact: true })
+            .click();
+    }
+
+    async selectAutocompleteOption(input: Locator, searchText: string, optionText?: string) {
+        await this.stableFill(input, searchText);
+        const suggestion = this.page.locator('.oxd-autocomplete-dropdown').getByText(
+            optionText ?? searchText,
+            { exact: false }
+        );
+        await suggestion.first().waitFor({ state: 'visible' });
+        await suggestion.first().click();
+    }
 }
