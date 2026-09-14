@@ -37,19 +37,34 @@ export class MyLeavePage extends BasePage {
     }
 
     /**
-     * These date inputs have their own input mask that fights with
-     * `stableFill`'s keystroke-by-keystroke typing (observed corrupting
-     * the value in CI). `Locator.fill` sets the value atomically instead,
-     * which this masked widget handles correctly.
+     * These date inputs have their own input mask that fights with both
+     * `stableFill`'s keystroke typing and a plain `Locator.fill` (both have
+     * been observed corrupting/duplicating the value in CI). Clears
+     * explicitly via keyboard first and retries the whole operation if the
+     * value still doesn't match.
      */
-    private async fillDateField(locator: Locator, value: string) {
+    private async fillDateField(locator: Locator, value: string, maxAttempts = 3) {
         await locator.waitFor({ state: 'visible' });
-        await locator.fill(value);
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await locator.click();
+            await locator.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+            await locator.press('Delete');
+            await locator.fill(value);
+            const matches = await locator
+                .inputValue()
+                .then((actual) => actual === value)
+                .catch(() => false);
+            if (matches) return;
+            if (attempt < maxAttempts) {
+                await this.page.waitForTimeout(300);
+            }
+        }
         await expect(locator).toHaveValue(value, { timeout: 5_000 });
     }
 
     async searchByDateRange(fromDate: string, toDate: string) {
         await this.fillDateField(this.fromDateInput, toLeaveDateFormat(fromDate));
+        await this.page.waitForTimeout(500);
         await this.fillDateField(this.toDateInput, toLeaveDateFormat(toDate));
         await this.click(this.searchButton);
     }

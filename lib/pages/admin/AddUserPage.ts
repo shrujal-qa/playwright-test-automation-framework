@@ -1,6 +1,7 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from '../base/BasePage';
 import { MESSAGES } from '../../data/constants/messages';
+import { Logger } from '../../utils/Logger';
 
 export class AddUserPage extends BasePage {
     private readonly userRoleDropdown: Locator;
@@ -51,12 +52,27 @@ export class AddUserPage extends BasePage {
      * retrying the same wait did not help). Selecting via keyboard instead
      * (arrow down to the first match, then Enter) works with any dropdown
      * markup, since it doesn't need to locate the suggestion element at all.
+     *
+     * A successful selection replaces the field's value with the matched
+     * employee's full name, so an unchanged/empty value afterward means
+     * the debounced search hadn't produced a suggestion yet — retried with
+     * a longer wait rather than assumed to have worked.
      */
-    async selectEmployee(employeeName: string): Promise<void> {
-        await this.stableFill(this.employeeNameInput, employeeName);
-        await this.page.waitForTimeout(1_000); // let the debounced suggestion search resolve
-        await this.employeeNameInput.press('ArrowDown');
-        await this.employeeNameInput.press('Enter');
+    async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            await this.stableFill(this.employeeNameInput, employeeName);
+            await this.page.waitForTimeout(1_000 * attempt); // let the debounced suggestion search resolve
+            await this.employeeNameInput.press('ArrowDown');
+            await this.employeeNameInput.press('Enter');
+
+            const value = await this.employeeNameInput.inputValue().catch(() => '');
+            if (value.trim().length > 0) return;
+            if (attempt === maxAttempts) {
+                throw new Error(
+                    `Employee Name field is still empty after ${maxAttempts} attempts to select "${employeeName}"`
+                );
+            }
+        }
     }
 
     async selectStatus(status: string) {
@@ -74,6 +90,28 @@ export class AddUserPage extends BasePage {
         // Give the save request and its redirect back to System Users time
         // to settle before the caller navigates or re-searches.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
+
+        // ADM-002 has failed downstream (created user not found by search)
+        // without an obvious cause. Log every visible "Required" error's
+        // containing field group so a future run's log pinpoints whether
+        // the employee picker (or anything else) silently stayed empty.
+        const requiredErrors = this.page.getByText('Required');
+        const count = await requiredErrors.count().catch(() => 0);
+        if (count > 0) {
+            const contexts: string[] = [];
+            for (let i = 0; i < count; i++) {
+                const context = await requiredErrors
+                    .nth(i)
+                    .locator('xpath=ancestor::*[contains(@class, "oxd-input-group")][1]')
+                    .innerText()
+                    .then((text) => text.replace(/\s+/g, ' ').trim())
+                    .catch(() => '(could not read containing field)');
+                contexts.push(context);
+            }
+            Logger.info(
+                `AddUserPage.save(): still on ${this.page.url()} — ${count} Required error(s): ${JSON.stringify(contexts)}`
+            );
+        }
     }
 
     async addUser(params: {

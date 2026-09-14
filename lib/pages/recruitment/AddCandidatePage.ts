@@ -38,14 +38,6 @@ export class AddCandidatePage extends BasePage {
         await this.stableFill(this.firstNameInput, firstName);
         await this.stableFill(this.lastNameInput, lastName);
         await this.stableFill(this.emailInput, email);
-
-        // Some OrangeHRM versions require a consent checkbox before saving
-        // a candidate. Check it defensively if present — this is a no-op
-        // where the field doesn't exist.
-        const consentCheckbox = this.page.locator('input[type="checkbox"]').first();
-        if ((await consentCheckbox.count()) > 0 && (await consentCheckbox.isVisible())) {
-            await consentCheckbox.check({ force: true }).catch(() => undefined);
-        }
     }
 
     async save() {
@@ -55,14 +47,27 @@ export class AddCandidatePage extends BasePage {
         // rely on as that signal.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
 
-        // The downstream "does it show up in the list" check has failed
-        // in CI without an obvious cause. Log what's actually on screen
-        // right after save so a future failure is diagnosable from the
-        // CI log instead of requiring another guess-and-push round.
-        const stillHasRequiredError = await this.requiredFieldError.isVisible().catch(() => false);
-        Logger.info(
-            `AddCandidatePage.save(): url=${this.page.url()} requiredFieldVisible=${stillHasRequiredError}`
-        );
+        // The previous round's logging confirmed save is failing validation
+        // (url stays on addCandidate, a Required error is visible) but not
+        // *which* field. Log every visible "Required" error's containing
+        // field group so the next CI run pinpoints it exactly.
+        const requiredErrors = this.page.getByText('Required');
+        const count = await requiredErrors.count().catch(() => 0);
+        if (count > 0) {
+            const contexts: string[] = [];
+            for (let i = 0; i < count; i++) {
+                const context = await requiredErrors
+                    .nth(i)
+                    .locator('xpath=ancestor::*[contains(@class, "oxd-input-group")][1]')
+                    .innerText()
+                    .then((text) => text.replace(/\s+/g, ' ').trim())
+                    .catch(() => '(could not read containing field)');
+                contexts.push(context);
+            }
+            Logger.info(
+                `AddCandidatePage.save(): still on ${this.page.url()} — ${count} Required error(s): ${JSON.stringify(contexts)}`
+            );
+        }
     }
 
     async addCandidate(firstName: string, lastName: string, email: string) {
