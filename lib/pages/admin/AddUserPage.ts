@@ -46,30 +46,46 @@ export class AddUserPage extends BasePage {
     }
 
     /**
-     * This widget's suggestion list never matched the `.oxd-autocomplete-
-     * dropdown` container that works for every other autocomplete field in
-     * the app (confirmed by repeated CI failures, not a timing issue —
-     * retrying the same wait did not help). Selecting via keyboard instead
-     * (arrow down to the first match, then Enter) works with any dropdown
-     * markup, since it doesn't need to locate the suggestion element at all.
-     *
-     * A successful selection replaces the field's value with the matched
-     * employee's full name, so an unchanged/empty value afterward means
-     * the debounced search hadn't produced a suggestion yet — retried with
-     * a longer wait rather than assumed to have worked.
+     * The prior keyboard-only approach (ArrowDown + Enter with no visible
+     * suggestion check) "succeeded" on every attempt because the field's
+     * value is already non-empty from the typed search text — that check
+     * couldn't tell a real selection apart from Enter doing nothing. This
+     * now waits for an ARIA `option` (a different, standards-based
+     * strategy from the `.oxd-autocomplete-dropdown` class match that
+     * never worked here) and clicks it directly; if none ever appears, it
+     * logs that fact explicitly instead of silently treating leftover
+     * typed text as a successful selection.
      */
     async selectEmployee(employeeName: string, maxAttempts = 3): Promise<void> {
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             await this.stableFill(this.employeeNameInput, employeeName);
-            await this.page.waitForTimeout(1_000 * attempt); // let the debounced suggestion search resolve
-            await this.employeeNameInput.press('ArrowDown');
-            await this.employeeNameInput.press('Enter');
+            const option = this.page.getByRole('option').first();
+            const optionAppeared = await option
+                .waitFor({ state: 'visible', timeout: 3_000 * attempt })
+                .then(() => true)
+                .catch(() => false);
+
+            if (optionAppeared) {
+                await option.click();
+            } else {
+                await this.employeeNameInput.press('ArrowDown');
+                await this.employeeNameInput.press('Enter');
+            }
 
             const value = await this.employeeNameInput.inputValue().catch(() => '');
-            if (value.trim().length > 0) return;
+            Logger.info(
+                `AddUserPage.selectEmployee(): attempt=${attempt} optionRoleAppeared=${optionAppeared} valueAfterSelection="${value}"`
+            );
+
+            // A real selection replaces the typed search text with the
+            // matched employee's full name (longer than what we typed).
+            // The typed text unchanged means nothing was actually selected.
+            if (optionAppeared || value.trim().length > employeeName.length) return;
+
             if (attempt === maxAttempts) {
                 throw new Error(
-                    `Employee Name field is still empty after ${maxAttempts} attempts to select "${employeeName}"`
+                    `Could not select a real employee suggestion for "${employeeName}" after ${maxAttempts} attempts ` +
+                        `(field value stayed "${value}")`
                 );
             }
         }
@@ -92,24 +108,12 @@ export class AddUserPage extends BasePage {
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
 
         // ADM-002 has failed downstream (created user not found by search)
-        // without an obvious cause. Log every visible "Required" error's
-        // containing field group so a future run's log pinpoints whether
-        // the employee picker (or anything else) silently stayed empty.
-        const requiredErrors = this.page.getByText('Required');
-        const count = await requiredErrors.count().catch(() => 0);
-        if (count > 0) {
-            const contexts: string[] = [];
-            for (let i = 0; i < count; i++) {
-                const context = await requiredErrors
-                    .nth(i)
-                    .locator('xpath=ancestor::*[contains(@class, "oxd-input-group")][1]')
-                    .innerText()
-                    .then((text) => text.replace(/\s+/g, ' ').trim())
-                    .catch(() => '(could not read containing field)');
-                contexts.push(context);
-            }
+        // without an obvious cause — the employee picker itself now
+        // verifies it populated a value, so the blocker is something else.
+        const contexts = await this.describeRequiredFieldErrors();
+        if (contexts.length > 0) {
             Logger.info(
-                `AddUserPage.save(): still on ${this.page.url()} — ${count} Required error(s): ${JSON.stringify(contexts)}`
+                `AddUserPage.save(): still on ${this.page.url()} — Required error(s): ${JSON.stringify(contexts)}`
             );
         }
     }

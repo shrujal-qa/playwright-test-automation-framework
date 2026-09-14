@@ -47,25 +47,13 @@ export class AddCandidatePage extends BasePage {
         // rely on as that signal.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
 
-        // The previous round's logging confirmed save is failing validation
-        // (url stays on addCandidate, a Required error is visible) but not
-        // *which* field. Log every visible "Required" error's containing
-        // field group so the next CI run pinpoints it exactly.
-        const requiredErrors = this.page.getByText('Required');
-        const count = await requiredErrors.count().catch(() => 0);
-        if (count > 0) {
-            const contexts: string[] = [];
-            for (let i = 0; i < count; i++) {
-                const context = await requiredErrors
-                    .nth(i)
-                    .locator('xpath=ancestor::*[contains(@class, "oxd-input-group")][1]')
-                    .innerText()
-                    .then((text) => text.replace(/\s+/g, ' ').trim())
-                    .catch(() => '(could not read containing field)');
-                contexts.push(context);
-            }
+        // Confirmed in CI that save silently fails validation (stays on
+        // addCandidate with a Required error) but not *which* field —
+        // the previous ancestor-based lookup itself failed to resolve.
+        const contexts = await this.describeRequiredFieldErrors();
+        if (contexts.length > 0) {
             Logger.info(
-                `AddCandidatePage.save(): still on ${this.page.url()} — ${count} Required error(s): ${JSON.stringify(contexts)}`
+                `AddCandidatePage.save(): still on ${this.page.url()} — Required error(s): ${JSON.stringify(contexts)}`
             );
         }
     }
