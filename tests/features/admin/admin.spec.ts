@@ -33,7 +33,7 @@ async function createDisposableEmployee(page: import('@playwright/test').Page) {
     const addEmployee = new AddEmployeePage(page);
     await addEmployee.addEmployee(firstName, lastName);
 
-    return { firstName, fullName, employeeList };
+    return { fullName, employeeList };
 }
 
 test.describe('Admin Tests - System Users List', () => {
@@ -126,7 +126,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const password = 'Pw@12345';
 
             Logger.step('Step 1: Create a disposable employee to link the new user to');
-            const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
+            const { fullName, employeeList } = await createDisposableEmployee(page);
 
             Logger.step(`Step 2: Add a new ESS system user (${username}) for that employee`);
             const systemUsers = new SystemUsersPage(page);
@@ -136,9 +136,9 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const addUser = new AddUserPage(page);
             await addUser.addUser({
                 role: 'ESS',
-                // The Employee Name autocomplete matches more reliably on the
-                // short, unique first name than the full "first last" string.
-                employeeName: firstName,
+                // Confirmed in CI: searching by first name alone returned
+                // "No Records Found" — this endpoint needs the full name.
+                employeeName: fullName,
                 status: 'Enabled',
                 username,
                 password,
@@ -172,7 +172,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const password = 'Pw@12345';
 
             Logger.step('Step 1: Create a disposable employee and linked user');
-            const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
+            const { fullName, employeeList } = await createDisposableEmployee(page);
 
             const systemUsers = new SystemUsersPage(page);
             await systemUsers.open();
@@ -181,7 +181,9 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             const addUser = new AddUserPage(page);
             await addUser.addUser({
                 role: 'ESS',
-                employeeName: firstName,
+                // Confirmed in CI: searching by first name alone returned
+                // "No Records Found" — this endpoint needs the full name.
+                employeeName: fullName,
                 status: 'Enabled',
                 username,
                 password,
