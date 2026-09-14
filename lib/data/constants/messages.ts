@@ -12,6 +12,7 @@ export const MESSAGES = {
     INVALID: 'Invalid',
     PASSWORDS_DO_NOT_MATCH: 'Passwords do not match',
     USERNAME_ALREADY_EXISTS: 'Already exists',
+    EMPLOYEE_ID_ALREADY_EXISTS: 'Employee Id already exists',
 
     // Toast notifications (shared across modules)
     SUCCESSFULLY_SAVED: 'Successfully Saved',

@@ -86,6 +86,25 @@ export abstract class BasePage {
         return this.fieldGroup(label).locator('.oxd-input-group__message');
     }
 
+    /**
+     * A plain `<input>` located by its HTML `name` attribute rather than a
+     * visible label. Needed for grouped fields that share one label across
+     * several inputs — e.g. PIM's "Employee Full Name" wraps three inputs
+     * named `firstName` / `middleName` / `lastName`, each in its own
+     * unlabeled `.oxd-input-group`.
+     */
+    protected inputByName(name: string): Locator {
+        return this.page.locator(`input[name="${name}"]`);
+    }
+
+    /** The inline validation message for a field located by its `name` attribute (see `inputByName`). */
+    protected fieldErrorByName(name: string): Locator {
+        return this.page
+            .locator('.oxd-input-group')
+            .filter({ has: this.page.locator(`input[name="${name}"]`) })
+            .locator('.oxd-input-group__message');
+    }
+
     /** Opens an OXD dropdown and clicks the option matching `optionText` exactly. */
     async selectDropdownOption(dropdown: Locator, optionText: string) {
         await dropdown.click();
@@ -125,5 +144,39 @@ export abstract class BasePage {
         const loader = this.page.locator('.oxd-table-loader');
         await loader.waitFor({ state: 'visible', timeout: 2_000 }).catch(() => {});
         await loader.waitFor({ state: 'hidden', timeout }).catch(() => {});
+    }
+
+    /* ============================
+       📄 OXD PAGINATION HELPERS
+       Shared `.oxd-pagination__ul` component rendered by every large list
+       (PIM Employee List, Recruitment Candidates, …).
+    ============================ */
+
+    /** Clicks a specific page number button and waits for the table to refresh. */
+    async goToPage(pageNumber: number) {
+        await this.page
+            .locator('.oxd-pagination-page-item.oxd-pagination-page-item--page', { hasText: String(pageNumber) })
+            .click();
+        await this.waitForTableLoad();
+    }
+
+    /** Clicks the "next page" chevron and waits for the table to refresh. */
+    async goToNextPage() {
+        await this.page.locator('.oxd-pagination-page-item--previous-next').last().click();
+        await this.waitForTableLoad();
+    }
+
+    /** The currently selected page number, per the pagination control. */
+    async getCurrentPageNumber(): Promise<number> {
+        const text = await this.page.locator('.oxd-pagination-page-item--page-selected').textContent();
+        return Number(text?.trim());
+    }
+
+    /** The highest page number shown in the pagination control. */
+    async getTotalPages(): Promise<number> {
+        const items = this.page.locator('.oxd-pagination-page-item.oxd-pagination-page-item--page');
+        const count = await items.count();
+        const lastText = await items.nth(count - 1).textContent();
+        return Number(lastText?.trim());
     }
 }

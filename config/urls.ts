@@ -15,4 +15,8 @@ export const URLS = {
 
     // Admin
     ADMIN_USER_LIST: '/web/index.php/admin/viewSystemUsers',
+
+    // PIM
+    PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
+    PIM_ADD_EMPLOYEE: '/web/index.php/pim/addEmployee',
 } as const;
