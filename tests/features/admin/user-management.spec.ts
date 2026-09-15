@@ -18,11 +18,13 @@ import { Logger } from '../../../lib/utils/Logger';
  * scenarios that read shared data assert structural invariants (every row
  * matches a filter) rather than absolute record counts.
  *
- * A known employee (`Virat Sylvan Kohali`, the default demo Admin account's
- * own employee record) is used as the Employee Name for created users, since
- * it is guaranteed to exist on this instance.
+ * Tests that need an existing Employee Name for the "Add User" form resolve
+ * it at run time via `userManagementPage.getLoggedInUserName()` (the
+ * currently logged-in account's own name) rather than hardcoding one — even
+ * the demo's seed accounts get renamed by other testers over time, and a
+ * hardcoded name silently goes stale (as happened here: the original
+ * `Virat Sylvan Kohali` seed employee was later renamed to `Jane Doe`).
  */
-const KNOWN_EMPLOYEE = 'Virat Sylvan Kohali';
 
 test.describe('User Management - View & Navigation', () => {
     test(
@@ -52,11 +54,12 @@ test.describe('User Management - CRUD Lifecycle', () => {
 
             Logger.step('Step 1: Open User Management');
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
 
             Logger.step(`Step 2: Create user ${username}`);
             await userManagementPage.createUser({
                 userRole: SYSTEM_USER_ROLE.ESS,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username,
                 password,
@@ -87,9 +90,10 @@ test.describe('User Management - CRUD Lifecycle', () => {
 
             Logger.step('Step 1: Create a user to edit');
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
             await userManagementPage.createUser({
                 userRole: SYSTEM_USER_ROLE.ESS,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username,
                 password,
@@ -123,10 +127,11 @@ test.describe('User Management - CRUD Lifecycle', () => {
 
             Logger.step('Step 1: Open Add User form and fill it out');
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
             await userManagementPage.openAddUserForm();
             await userManagementPage.fillUserForm({
                 userRole: SYSTEM_USER_ROLE.ESS,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username,
                 password: DataGenerator.password(),
@@ -156,9 +161,10 @@ test.describe('User Management - Search & Filter', () => {
             const password = DataGenerator.password();
 
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
             await userManagementPage.createUser({
                 userRole: SYSTEM_USER_ROLE.ESS,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username,
                 password,
@@ -259,10 +265,11 @@ test.describe('User Management - Negative & Validation', () => {
             const password = DataGenerator.password();
 
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
             await userManagementPage.openAddUserForm();
             await userManagementPage.fillUserForm({
                 userRole: SYSTEM_USER_ROLE.ADMIN,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username: 'Admin', // pre-existing username on this instance
                 password,
@@ -304,10 +311,11 @@ test.describe('User Management - Negative & Validation', () => {
         { tag: ['@regression', '@negative', '@validation', '@admin'] },
         async ({ userManagementPage }) => {
             await userManagementPage.openUserList();
+            const employeeName = await userManagementPage.getLoggedInUserName();
             await userManagementPage.openAddUserForm();
             await userManagementPage.fillUserForm({
                 userRole: SYSTEM_USER_ROLE.ESS,
-                employeeName: KNOWN_EMPLOYEE,
+                employeeName,
                 status: SYSTEM_USER_STATUS.ENABLED,
                 username: DataGenerator.user('Mismatch'),
                 password: DataGenerator.password(),

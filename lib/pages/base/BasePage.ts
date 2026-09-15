@@ -105,6 +105,21 @@ export abstract class BasePage {
             .locator('.oxd-input-group__message');
     }
 
+    /**
+     * The display name of the currently logged-in user, read from the
+     * top-right header (present on every authenticated page).
+     *
+     * Use this instead of hardcoding a specific employee's name as "known
+     * to exist" — the target is the public, publicly-writable OrangeHRM
+     * demo, and even its seed accounts get renamed/edited by other testers
+     * over time. The logged-in account's own name is the one identity
+     * guaranteed to be resolvable at run time.
+     */
+    async getLoggedInUserName(): Promise<string> {
+        const text = await this.page.locator('.oxd-userdropdown-name').textContent();
+        return (text ?? '').trim();
+    }
+
     /** Opens an OXD dropdown and clicks the option matching `optionText` exactly. */
     async selectDropdownOption(dropdown: Locator, optionText: string) {
         await dropdown.click();
