@@ -140,7 +140,7 @@ playwright-test-automation-framework/
 │   │   ├── auth/              # LoginPage
 │   │   └── dashboard/         # DashboardPage
 │   └── utils/                 # Logger, Wait, DataGenerator
-├── specs/
+├── tests/
 │   ├── setup/                 # auth.setup.ts — persists storage state
 │   └── features/              # Business-readable specs (auth, dashboard, …)
 ├── docs/                      # Quick Start, Architecture, Runbook, Troubleshooting…

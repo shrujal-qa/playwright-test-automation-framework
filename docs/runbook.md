@@ -55,8 +55,8 @@ npx playwright test --grep "USER-001"
 ### By file or folder
 
 ```bash
-npx playwright test specs/features/auth/login.spec.ts
-npx playwright test specs/features/dashboard/
+npx playwright test tests/features/auth/login.spec.ts
+npx playwright test tests/features/dashboard/
 ```
 
 ### By Playwright project

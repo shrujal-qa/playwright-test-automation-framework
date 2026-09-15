@@ -85,7 +85,7 @@ Reports:
 | Topic         | Rule                                                                                     |
 | ------------- | ---------------------------------------------------------------------------------------- |
 | Language      | TypeScript (strict mode)                                                                 |
-| Folders       | kebab-case (`specs/features`, `lib/pages`)                                               |
+| Folders       | kebab-case (`tests/features`, `lib/pages`)                                               |
 | Files (class) | PascalCase (`LoginPage.ts`, `DashboardPage.ts`)                                          |
 | Files (spec)  | kebab-case + `.spec.ts` (`login.spec.ts`)                                                |
 | Symbols       | camelCase for methods/vars, PascalCase for types, UPPER_SNAKE for constants              |
@@ -159,7 +159,7 @@ A PR should:
 ## Adding New Tests
 
 ```
-specs/features/<module>/<feature>.spec.ts
+tests/features/<module>/<feature>.spec.ts
 ```
 
 Checklist for a new spec:

@@ -11,21 +11,22 @@ severity, and intent — so it stays readable as the suite grows.
 
 | Metric           | Value |
 | ---------------- | ----- |
-| Total test cases | **32**  |
-| Smoke            | 10    |
-| Regression       | 32    |
-| Critical         | 5     |
-| Negative         | 7     |
-| Validation       | 7     |
+| Total test cases | **44**  |
+| Smoke            | 11    |
+| Regression       | 44    |
+| Critical         | 4     |
+| Negative         | 9     |
+| Validation       | 9     |
 | RBAC             | 2     |
+| E2E              | 2     |
 
 Approximate execution time on a single worker against the OrangeHRM demo:
 
 | Suite            | Tests | Duration       |
 | ---------------- | ----- | -------------- |
-| `@smoke`         | 10    | ~3-4 min       |
-| `@regression`    | 32    | ~13-16 min     |
-| Full run (incl. setup) | 33+ | ~14-18 min  |
+| `@smoke`         | 11    | ~3-4 min       |
+| `@regression`    | 44    | ~17-21 min     |
+| Full run (incl. setup) | 45+ | ~18-23 min  |
 
 CI shards regression across two runners, cutting wall-clock time roughly in half.
 
@@ -41,10 +42,13 @@ CI shards regression across two runners, cutting wall-clock time roughly in half
 | `@negative`   | Negative paths (invalid credentials, error responses)                 |
 | `@validation` | Form / input validation                                              |
 | `@rbac`       | Role-based access control                                            |
+| `@e2e`        | Multi-step, cross-cutting lifecycle scenarios                        |
+| `@admin`      | Admin module (User Management)                                       |
+| `@pim`        | PIM module (Employee Management)                                     |
 
 ---
 
-## Authentication (`specs/features/auth/login.spec.ts`)
+## Authentication (`tests/features/auth/login.spec.ts`)
 
 ### Positive
 
@@ -79,7 +83,7 @@ CI shards regression across two runners, cutting wall-clock time roughly in half
 
 ---
 
-## Dashboard (`specs/features/dashboard/dashboard.spec.ts`)
+## Dashboard (`tests/features/dashboard/dashboard.spec.ts`)
 
 ### User role
 
@@ -106,7 +110,19 @@ CI shards regression across two runners, cutting wall-clock time roughly in half
 
 ---
 
-## Admin — User Management (`specs/features/admin/user-management.spec.ts`)
+## UI Element Data Validation (`tests/features/ui/ui-elements-data.spec.ts`)
+
+Data-driven checks that key elements (declared once in `UI_CONSTANTS.ELEMENTS`)
+are visible on their page — one generated test per element, per page.
+
+| Test ID   | Title                                             | Tags                    | Severity |
+| --------- | -------------------------------------------------- | -------------------------- | -------- |
+| `UI-001` | `{element}` is visible on the login page (×3)        | `@regression @validation` | Normal   |
+| `UI-002` | `{element}` is visible on the dashboard (×1)          | `@regression @validation` | Normal   |
+
+---
+
+## Admin — User Management (`tests/features/admin/user-management.spec.ts`)
 
 The public OrangeHRM demo is shared with other testers worldwide, so every
 scenario that creates data uses a `DataGenerator`-produced unique username
@@ -154,6 +170,51 @@ close this gap.
 
 ---
 
+## PIM — Employee Management (`tests/features/pim/employee-management.spec.ts`)
+
+Scope: the Employee List and the Add Employee → Personal Details flow only.
+The remaining profile tabs (Contact Details, Emergency Contacts, Dependents,
+Immigration, Job, Salary, Qualifications, Memberships) are not yet modeled —
+see the roadmap below.
+
+Post-edit lookups use Employee Id (captured at creation time), not Employee
+Name search — the name-autocomplete search index observably lags a few
+seconds behind a just-made edit on this instance, which would otherwise
+make cleanup/verification flaky.
+
+### View & navigation
+
+| Test ID    | Title                                | Tags                     | Severity |
+| ---------- | ------------------------------------- | -------------------------- | -------- |
+| `PIM-001` | Admin can view the Employee List      | `@smoke @regression @pim` | Normal   |
+
+### CRUD lifecycle
+
+| Test ID    | Title                                                                | Tags                                     | Severity |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `PIM-002` | Create, find, and delete an employee (full lifecycle)                   | `@smoke @regression @critical @pim @e2e`  | Critical |
+| `PIM-003` | Create an employee with a custom Employee Id and middle name             | `@regression @pim`                        | Normal   |
+| `PIM-004` | Edit an employee's Personal Details                                      | `@regression @pim`                        | Normal   |
+| `PIM-005` | Cancel on Add Employee discards changes                                  | `@regression @pim`                        | Normal   |
+
+### Search, filter & pagination
+
+| Test ID    | Title                                                    | Tags                 | Severity |
+| ---------- | ------------------------------------------------------------ | ----------------------- | -------- |
+| `PIM-006` | Search by Employee Name returns only the matching record      | `@regression @pim`   | Normal   |
+| `PIM-007` | Search by Employee Id returns only the matching record        | `@regression @pim`   | Normal   |
+| `PIM-008` | Reset clears applied filters                                   | `@regression @pim`   | Normal   |
+| `PIM-009` | Pagination navigates between pages of the Employee List        | `@regression @pim`   | Normal   |
+
+### Negative & validation
+
+| Test ID    | Title                                                      | Tags                                      | Severity |
+| ---------- | ------------------------------------------------------------- | -------------------------------------------- | -------- |
+| `PIM-101` | Empty Add Employee form shows field-level validation           | `@regression @negative @validation @pim`   | Normal   |
+| `PIM-102` | Duplicate Employee Id is rejected                              | `@regression @negative @pim`               | Normal   |
+
+---
+
 ## Execution recipes
 
 ```bash
@@ -165,13 +226,15 @@ npm run test:negative
 npm run test:rbac
 
 # Run a single feature
-npx playwright test specs/features/auth/login.spec.ts
-npx playwright test specs/features/dashboard/dashboard.spec.ts
-npx playwright test specs/features/admin/
+npx playwright test tests/features/auth/login.spec.ts
+npx playwright test tests/features/dashboard/dashboard.spec.ts
+npx playwright test tests/features/admin/
+npx playwright test tests/features/pim/
 
 # Run by Test ID prefix (e.g. all AUTH-1xx negative tests)
 npx playwright test --grep "AUTH-10"
 npx playwright test --grep "ADMIN-USER-"
+npx playwright test --grep "PIM-"
 ```
 
 ---
@@ -180,7 +243,7 @@ npx playwright test --grep "ADMIN-USER-"
 
 Each new spec should:
 
-1. Live under `specs/features/<module>/<feature>.spec.ts`.
+1. Live under `tests/features/<module>/<feature>.spec.ts`.
 2. Carry a Test ID prefix (e.g. `PIM-001`, `LEAVE-101`).
 3. Use the role-based fixtures (`loginAs`, `userPage`, `adminPage`) — no manual login.
 4. Use page objects for **all** locators; no inline selectors in specs.
@@ -195,7 +258,8 @@ See [CONTRIBUTING → Adding New Tests](../CONTRIBUTING.md#adding-new-tests).
 Planned expansion (contributions welcome):
 
 - [x] **Admin module** — System User CRUD, search/filter, validation
-- [ ] **PIM module** — employee CRUD coverage
+- [x] **PIM module** — Employee List + Add Employee + Personal Details CRUD, search/filter, pagination, validation
+- [ ] **PIM module — remaining tabs** — Contact Details, Emergency Contacts, Dependents, Immigration, Job, Salary, Qualifications, Memberships
 - [ ] **Leave module** — apply / approve / cancel flows
 - [ ] **Time module** — timesheet submission
 - [ ] **API layer** — token-based authentication and request fixtures

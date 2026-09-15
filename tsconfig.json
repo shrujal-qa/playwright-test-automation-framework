@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -22,7 +21,7 @@
     "paths": {
       "@config/*": ["./config/*"],
       "@lib/*": ["./lib/*"],
-      "@specs/*": ["tests/*"]
+      "@tests/*": ["./tests/*"]
     }
   },
   "include": ["config", "lib", "tests", "playwright.config.ts"],

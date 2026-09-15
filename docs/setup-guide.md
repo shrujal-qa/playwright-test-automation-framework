@@ -97,7 +97,7 @@ Swapping the target application is a four-step process:
 | 1    | `.env` / `.env.example`                    | Update `*_BASE_URL` and credential variables        |
 | 2    | `config/urls.ts`                           | Replace route fragments (`LOGIN`, `DASHBOARD`, …)   |
 | 3    | `lib/pages/**`                             | Update locators / extend page objects               |
-| 4    | `specs/**`                                 | Update spec wording, tags, and test IDs             |
+| 4    | `tests/**`                                 | Update spec wording, tags, and test IDs             |
 
 You shouldn't need to touch `playwright.config.ts` or the fixtures layer unless
 you add new roles or projects.

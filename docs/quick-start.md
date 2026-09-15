@@ -94,7 +94,7 @@ npx playwright test --grep @validation
 npx playwright test --grep @rbac
 
 # Single spec
-npx playwright test specs/features/auth/login.spec.ts
+npx playwright test tests/features/auth/login.spec.ts
 
 # Specific Playwright project
 npx playwright test --project=authenticated
@@ -118,7 +118,7 @@ lib/
   helpers/     business-level assertions
   pages/       Page Objects (Base, Login, Dashboard)
   utils/       Logger, Wait, DataGenerator
-specs/
+tests/
   setup/       auth.setup.ts — captures storage state once
   features/    business-readable specs (auth, dashboard, …)
 ```
@@ -142,7 +142,7 @@ More detail in [docs/troubleshooting.md](troubleshooting.md).
 
 ## Next steps
 
-1. **Explore a real spec** — open [`specs/features/auth/login.spec.ts`](../specs/features/auth/login.spec.ts).
+1. **Explore a real spec** — open [`tests/features/auth/login.spec.ts`](../tests/features/auth/login.spec.ts).
 2. **Learn the architecture** — [docs/architecture.md](architecture.md).
 3. **Understand test coverage** — [docs/test-coverage.md](test-coverage.md).
 4. **Add your first test** — see [CONTRIBUTING → Adding New Tests](../CONTRIBUTING.md#adding-new-tests).

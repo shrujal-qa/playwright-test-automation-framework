@@ -12,7 +12,7 @@ responsible for, and the design principles that keep it maintainable.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  specs/                                     │  ← business intent
+│  tests/                                     │  ← business intent
 │  └ features/<module>/*.spec.ts              │
 │  └ setup/*.setup.ts                         │
 ├─────────────────────────────────────────────┤
@@ -65,18 +65,29 @@ lib/
     auth/LoginPage.ts
     dashboard/DashboardPage.ts
     admin/UserManagementPage.ts
+    pim/EmployeeListPage.ts
+    pim/AddEmployeePage.ts
+    pim/EmployeeDetailsPage.ts    # Personal Details tab only — see PIM scope note below
 
   utils/
     Logger.ts                 # Timestamped, level-tagged console logging
     Wait.ts                   # Explicit waits (URL, visible, hidden, until)
     DataGenerator.ts          # PW_{Entity}_{UniqueId} pattern, password()
 
-specs/
+tests/
   setup/auth.setup.ts         # One-time login; persists storage state
   features/auth/login.spec.ts
   features/dashboard/dashboard.spec.ts
+  features/ui/ui-elements-data.spec.ts
   features/admin/user-management.spec.ts
+  features/pim/employee-management.spec.ts
 ```
+
+**PIM scope note:** `EmployeeDetailsPage` currently models only the
+"Personal Details" tab (the view PIM lands on right after creating an
+employee). The other profile tabs — Contact Details, Emergency Contacts,
+Dependents, Immigration, Job, Salary, Qualifications, Memberships — are not
+yet modeled; see the roadmap in `docs/test-coverage.md`.
 
 ---
 
@@ -112,13 +123,19 @@ Page Objects encapsulate the **structure and interactions** of a single screen.
       fields this way)
     - `selectDropdownOption(dropdown, text)` / `selectAutocompleteOption(input, search, exact?)`
       — drive OXD `<select>`-style dropdowns and autocomplete inputs
+    - `inputByName(name)` / `fieldErrorByName(name)` — locate a field by its
+      HTML `name` attribute instead of a label, for grouped fields that
+      share one label across several inputs (e.g. PIM's "Employee Full
+      Name" wraps `firstName` / `middleName` / `lastName`)
     - `expectToast(message)` — asserts the OXD toast notification text
     - `waitForTableLoad()` — waits out the `.oxd-table-loader` spinner shown
       while a list re-fetches (search/reset/sort); avoids a race where the
       row count is read before the async refresh completes
-- **Concrete pages** (`LoginPage`, `DashboardPage`, `UserManagementPage`)
-  declare locators as `readonly` fields and expose `async` actions /
-  verifications.
+    - `goToPage(n)` / `goToNextPage()` / `getCurrentPageNumber()` /
+      `getTotalPages()` — drive the shared `.oxd-pagination__ul` control
+- **Concrete pages** (`LoginPage`, `DashboardPage`, `UserManagementPage`,
+  `EmployeeListPage`, `AddEmployeePage`, `EmployeeDetailsPage`) declare
+  locators as `readonly` fields and expose `async` actions / verifications.
 
 **Rule:** Page objects don't know about test data or env variables — they
 receive everything as arguments.
@@ -132,7 +149,7 @@ underlying page objects. It is split into two files:
 
 | File                | Provides                                                              |
 | ------------------- | --------------------------------------------------------------------- |
-| `base.fixture.ts`   | `loginPage`, `dashboardPage`, `userManagementPage` — page objects bound to the active page |
+| `base.fixture.ts`   | `loginPage`, `dashboardPage`, `userManagementPage`, `employeeListPage`, `addEmployeePage`, `employeeDetailsPage` — page objects bound to the active page |
 | `auth.fixture.ts`   | `loginAs(role)`, `userPage`, `adminPage` — authenticated contexts     |
 | `index.ts`          | Merges both fixtures into a single `test` export                       |
 
@@ -186,7 +203,7 @@ and even then only outside CI (it short-circuits when `process.env.CI` is set).
 
 ---
 
-### `specs/`
+### `tests/`
 
 | Folder      | Contents                                                              |
 | ----------- | --------------------------------------------------------------------- |
