@@ -46,7 +46,7 @@ test.describe('Employee Management - CRUD Lifecycle', () => {
         'PIM-002: Admin can create, find, and delete an employee (full lifecycle)',
         { tag: ['@smoke', '@regression', '@critical', '@pim', '@e2e'] },
         async ({ employeeListPage, addEmployeePage }) => {
-            const lastName = DataGenerator.entityName('Lifecycle');
+            const lastName = DataGenerator.shortEntityName('Lifecycle');
             const displayName = `PW ${lastName}`;
 
             Logger.step('Step 1: Open Add Employee');
@@ -75,7 +75,7 @@ test.describe('Employee Management - CRUD Lifecycle', () => {
         'PIM-003: Admin can create an employee with a custom Employee Id and middle name',
         { tag: ['@regression', '@pim'] },
         async ({ employeeListPage, addEmployeePage, employeeDetailsPage }) => {
-            const lastName = DataGenerator.entityName('FullName');
+            const lastName = DataGenerator.shortEntityName('FullName');
             const employeeId = DataGenerator.number(6);
 
             Logger.step('Step 1: Create employee with middle name and custom Employee Id');
@@ -107,8 +107,8 @@ test.describe('Employee Management - CRUD Lifecycle', () => {
         'PIM-004: Admin can edit an employee\'s Personal Details',
         { tag: ['@regression', '@pim'] },
         async ({ employeeListPage, addEmployeePage, employeeDetailsPage }) => {
-            const originalLastName = DataGenerator.entityName('Original');
-            const updatedLastName = `${originalLastName}Updated`;
+            const originalLastName = DataGenerator.shortEntityName('Orig');
+            const updatedLastName = DataGenerator.shortEntityName('Upd');
 
             Logger.step('Step 1: Create an employee to edit');
             await employeeListPage.open();
@@ -137,7 +137,7 @@ test.describe('Employee Management - CRUD Lifecycle', () => {
         'PIM-005: Cancel on Add Employee discards changes',
         { tag: ['@regression', '@pim'] },
         async ({ employeeListPage, addEmployeePage }) => {
-            const lastName = DataGenerator.entityName('Cancelled');
+            const lastName = DataGenerator.shortEntityName('Cancelled');
 
             Logger.step('Step 1: Fill Add Employee form');
             await employeeListPage.open();
@@ -163,7 +163,7 @@ test.describe('Employee Management - Search, Filter & Pagination', () => {
         'PIM-006: Search by Employee Name returns only the matching record',
         { tag: ['@regression', '@pim'] },
         async ({ employeeListPage, addEmployeePage }) => {
-            const lastName = DataGenerator.entityName('SearchName');
+            const lastName = DataGenerator.shortEntityName('SearchName');
 
             await employeeListPage.open();
             await employeeListPage.goToAddEmployee();
@@ -185,7 +185,7 @@ test.describe('Employee Management - Search, Filter & Pagination', () => {
         'PIM-007: Search by Employee Id returns only the matching record',
         { tag: ['@regression', '@pim'] },
         async ({ employeeListPage, addEmployeePage }) => {
-            const lastName = DataGenerator.entityName('SearchId');
+            const lastName = DataGenerator.shortEntityName('SearchId');
             const employeeId = DataGenerator.number(6);
 
             await employeeListPage.open();
@@ -270,7 +270,7 @@ test.describe('Employee Management - Negative & Validation', () => {
             await addEmployeePage.open();
             await addEmployeePage.fillBasicInfo({
                 firstName: 'PW',
-                lastName: DataGenerator.entityName('DupId'),
+                lastName: DataGenerator.shortEntityName('DupId'),
                 employeeId: '0001', // pre-existing Employee Id on this instance
             });
             await addEmployeePage.save();

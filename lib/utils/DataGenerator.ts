@@ -15,7 +15,7 @@ export class DataGenerator {
     ---------------------------- */
 
     private static uniqueIdentifier(length = 6): string {
-        return `${Date.now()}_${Math.random().toString(36).substring(2, 2 + length)}`;
+        return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 2 + length)}`;
     }
 
     /* ---------------------------
@@ -33,6 +33,19 @@ export class DataGenerator {
 
     static entityName(entityType: string): string {
         return `${APP_CONSTANTS.TEST_PREFIX}_${entityType}_${this.uniqueIdentifier()}`;
+    }
+
+    /**
+     * Like `entityName()`, but guarantees the result never exceeds
+     * `maxLength` — for fields with a hard character cap (e.g. OrangeHRM's
+     * PIM Employee Name fields cap at 30 characters and reject longer
+     * input outright). Truncates the unique suffix rather than the entity
+     * type, so the name stays readable and still traceable back to the
+     * test that created it.
+     */
+    static shortEntityName(entityType: string, maxLength = 30): string {
+        const full = this.entityName(entityType);
+        return full.length <= maxLength ? full : full.slice(0, maxLength);
     }
 
     /* ---------------------------
