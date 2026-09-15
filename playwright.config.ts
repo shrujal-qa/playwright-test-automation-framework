@@ -6,7 +6,7 @@ import { APP_CONSTANTS } from './lib/data/constants/app-constants';
 const isCI = ENV.IS_CI;
 
 export default defineConfig({
-    testDir: './specs',
+    testDir: './tests',
     timeout: BROWSER_CONFIG.TIMEOUTS.TEST,
     expect: { timeout: BROWSER_CONFIG.TIMEOUTS.EXPECT },
     fullyParallel: true,
