@@ -50,7 +50,7 @@ lib/
       admin-constants.ts      # SYSTEM_USER_ROLE / SYSTEM_USER_STATUS (Admin → User Management)
 
   fixtures/
-    base.fixture.ts           # loginPage, dashboardPage, userManagementPage (page objects only)
+    base.fixture.ts           # page objects only — see full list in lib/fixtures/ section below
     auth.fixture.ts           # loginAs(role), userPage, adminPage
     index.ts                  # mergeTests entry point
 
@@ -60,19 +60,26 @@ lib/
   pages/
     base/BasePage.ts          # goto, click, stableFill, expectVisible,
                                # + OXD helpers: fieldGroup/inputByLabel/selectByLabel,
-                               #   selectDropdownOption, selectAutocompleteOption,
-                               #   expectToast, waitForTableLoad
+                               #   inputByName/fieldErrorByName, selectDropdownOption,
+                               #   selectFirstDropdownOption, selectAutocompleteOption,
+                               #   expectToast, waitForTableLoad, getLoggedInUserName,
+                               #   goToPage/goToNextPage/getCurrentPageNumber/getTotalPages
     auth/LoginPage.ts
     dashboard/DashboardPage.ts
     admin/UserManagementPage.ts
     pim/EmployeeListPage.ts
     pim/AddEmployeePage.ts
     pim/EmployeeDetailsPage.ts    # Personal Details tab only — see PIM scope note below
+    leave/ApplyLeavePage.ts
+    leave/LeaveListPage.ts        # view/search only — no approve/reject/cancel
+    leave/LeaveEntitlementsPage.ts
+    leave/AssignLeavePage.ts      # navigation only — see Leave scope note below
 
   utils/
     Logger.ts                 # Timestamped, level-tagged console logging
     Wait.ts                   # Explicit waits (URL, visible, hidden, until)
-    DataGenerator.ts          # PW_{Entity}_{UniqueId} pattern, password()
+    DataGenerator.ts          # PW_{Entity}_{UniqueId} pattern, shortEntityName(),
+                               # password(), leaveDate()
 
 tests/
   setup/auth.setup.ts         # One-time login; persists storage state
@@ -81,7 +88,13 @@ tests/
   features/ui/ui-elements-data.spec.ts
   features/admin/user-management.spec.ts
   features/pim/employee-management.spec.ts
+  features/leave/leave-management.spec.ts
 ```
+
+**Leave scope note:** built under a constraint against running full
+Playwright suites (brief read-only DOM inspection only, not the full
+write→run→fix loop used for Admin/PIM) — see the Leave section in
+`docs/test-coverage.md` for exactly what's unverified and why.
 
 **PIM scope note:** `EmployeeDetailsPage` currently models only the
 "Personal Details" tab (the view PIM lands on right after creating an
@@ -149,7 +162,7 @@ underlying page objects. It is split into two files:
 
 | File                | Provides                                                              |
 | ------------------- | --------------------------------------------------------------------- |
-| `base.fixture.ts`   | `loginPage`, `dashboardPage`, `userManagementPage`, `employeeListPage`, `addEmployeePage`, `employeeDetailsPage` — page objects bound to the active page |
+| `base.fixture.ts`   | Page objects bound to the active page: `loginPage`, `dashboardPage`, `userManagementPage`, `employeeListPage`, `addEmployeePage`, `employeeDetailsPage`, `applyLeavePage`, `leaveListPage`, `leaveEntitlementsPage`, `assignLeavePage` |
 | `auth.fixture.ts`   | `loginAs(role)`, `userPage`, `adminPage` — authenticated contexts     |
 | `index.ts`          | Merges both fixtures into a single `test` export                       |
 

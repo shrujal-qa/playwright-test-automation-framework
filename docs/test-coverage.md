@@ -11,22 +11,22 @@ severity, and intent — so it stays readable as the suite grows.
 
 | Metric           | Value |
 | ---------------- | ----- |
-| Total test cases | **86**  |
-| Smoke            | 22    |
-| Regression       | 86    |
-| Critical         | 13    |
-| Negative         | 15    |
-| Validation       | 16    |
+| Total test cases | **95**  |
+| Smoke            | 27    |
+| Regression       | 95    |
+| Critical         | 15    |
+| Negative         | 16    |
+| Validation       | 17    |
 | RBAC             | 2     |
-| E2E              | 2     |
+| E2E              | 3     |
 
 Approximate execution time on a single worker against the OrangeHRM demo:
 
 | Suite            | Tests | Duration       |
 | ---------------- | ----- | -------------- |
-| `@smoke`         | 22    | ~7-9 min        |
-| `@regression`    | 86    | ~35-40 min      |
-| Full run (incl. setup) | 87 | ~35-40 min  |
+| `@smoke`         | 27    | ~9-11 min       |
+| `@regression`    | 95    | ~38-44 min      |
+| Full run (incl. setup) | 96 | ~38-44 min  |
 
 CI shards regression across two runners, cutting wall-clock time roughly in half.
 Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
@@ -48,6 +48,7 @@ Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
 | `@e2e`        | Multi-step, cross-cutting lifecycle scenarios                        |
 | `@admin`      | Admin module (User Management)                                       |
 | `@pim`        | PIM module (Employee Management)                                     |
+| `@leave`      | Leave module (Apply, Leave List, Entitlements, Assign Leave)         |
 
 ---
 
@@ -326,6 +327,64 @@ ever executed** against the shared demo.
 
 ---
 
+## Leave (`tests/features/leave/leave-management.spec.ts`)
+
+⚠️ **Not yet fully live-verified** — built under a constraint against
+running full Playwright suites, using only brief targeted DOM inspections
+rather than the full write→run→fix loop used for Admin/PIM. Two specific
+things to check when you run this in UI mode:
+
+- `LEAVE-002` (successful Apply Leave): during inspection, clicking Apply
+  after a fully valid fill sometimes produced no toast, no navigation, and
+  no inline error, even with a non-zero leave balance. `ApplyLeavePage`
+  now waits for the async balance/duration lookup to settle before
+  submitting, which may fix it — if this test still fails, that's a real
+  interaction issue worth digging into, not just a bad locator.
+- `AssignLeavePage` only covers navigation (`LEAVE-008`) — its form fields
+  and submit button were never confirmed live.
+
+As elsewhere, Leave Type is resolved dynamically at run time
+(`selectFirstDropdownOption`) rather than hardcoded, since this demo's
+configured leave types are shared, mutable reference data.
+
+### Apply
+
+| Test ID    | Title                                                  | Tags                                        | Severity |
+| ---------- | -------------------------------------------------------- | ---------------------------------------------- | -------- |
+| `LEAVE-001` | Employee can view the Apply Leave page                   | `@smoke @regression @leave`                   | Normal   |
+| `LEAVE-002` | Employee can apply for a single day of leave              | `@smoke @regression @critical @leave`         | Critical |
+| `LEAVE-101` | Empty Apply Leave form shows field-level validation        | `@regression @negative @validation @leave`    | Normal   |
+
+### Leave List
+
+| Test ID    | Title                                                     | Tags                     | Severity |
+| ---------- | -------------------------------------------------------------- | --------------------------- | -------- |
+| `LEAVE-003` | Admin can view the Leave List                                   | `@smoke @regression @leave` | Normal   |
+| `LEAVE-004` | Admin can search the Leave List by employee name                 | `@regression @leave`        | Normal   |
+| `LEAVE-005` | Reset clears the Employee Name filter on the Leave List            | `@regression @leave`        | Normal   |
+
+### Entitlements
+
+| Test ID    | Title                                                    | Tags                                    | Severity |
+| ---------- | -------------------------------------------------------------- | ------------------------------------------ | -------- |
+| `LEAVE-006` | Admin can view Leave Entitlements                                | `@smoke @regression @leave`               | Normal   |
+| `LEAVE-007` | Add and delete a leave entitlement (full lifecycle)               | `@regression @critical @leave @e2e`       | Critical |
+
+### Assign Leave
+
+| Test ID    | Title                               | Tags                          | Severity |
+| ---------- | ----------------------------------- | -------------------------------- | -------- |
+| `LEAVE-008` | Admin can view the Assign Leave page  | `@smoke @regression @leave`     | Normal   |
+
+**Known gaps:** Assign Leave create flow, Leave List row-level approve /
+reject / cancel actions (rendered behind a kebab menu whose interactions
+weren't verified), and the "Show Leave with Status" multi-select filter
+(confirmed as a multi-select with removable chips, but not exercised by a
+test — a wrong click risks toggling off the default "Pending Approval"
+filter rather than adding to it).
+
+---
+
 ## Execution recipes
 
 ```bash
@@ -348,11 +407,13 @@ npx playwright test tests/features/directory/directory.spec.ts
 npx playwright test tests/features/maintenance/maintenance.spec.ts
 npx playwright test tests/features/admin/
 npx playwright test tests/features/pim/
+npx playwright test tests/features/leave/
 
 # Run by Test ID prefix (e.g. all AUTH-1xx negative tests, or a whole module)
 npx playwright test --grep "AUTH-10"
 npx playwright test --grep "ADMIN-USER-"
 npx playwright test --grep "PIM-"
+npx playwright test --grep "LEAVE-"
 ```
 
 ---
@@ -380,6 +441,8 @@ Planned expansion (contributions welcome):
 - [ ] **PIM module — remaining tabs** — Contact Details, Emergency Contacts, Dependents, Immigration, Job, Salary, Qualifications, Memberships
 - [x] **Leave module** — apply / cancel flows (approve is out of scope — it
       needs a second, distinct role account the shared demo doesn't provide)
+- [x] **Leave module** — Apply, Leave List (view/search), Entitlements CRUD, Assign Leave (navigation only) — **not fully live-verified, see the Leave section above**
+- [ ] **Leave module — remaining** — Assign Leave create flow, Leave List approve/reject/cancel actions, status multi-select filter
 - [x] **Recruitment module** — candidate CRUD coverage
 - [x] **My Info module** — read-only ESS profile checks
 - [x] **Directory module** — read-only company lookup

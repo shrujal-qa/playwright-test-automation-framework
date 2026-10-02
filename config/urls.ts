@@ -37,4 +37,8 @@ export const URLS = {
 
     // PIM (Employee Management module)
     PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
+
+    // Leave (Leave Management module)
+    LEAVE_MY_ENTITLEMENTS: '/web/index.php/leave/viewMyLeaveEntitlements',
+    LEAVE_ASSIGN: '/web/index.php/leave/assignLeave',
 } as const;

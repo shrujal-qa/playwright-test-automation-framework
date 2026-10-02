@@ -94,4 +94,21 @@ export class DataGenerator {
         date.setDate(date.getDate() + offsetDays);
         return date.toISOString().split('T')[0];
     }
+
+    /**
+     * OrangeHRM's Leave module date inputs render the placeholder
+     * `yyyy-dd-mm` (year-day-month, not the usual year-month-day) — this
+     * produces a real date string in that same field order so it fills
+     * correctly. Confirm the exact input behavior (native date picker vs.
+     * masked text) the first time you run a Leave spec; adjust the fill
+     * strategy in the page object if needed rather than this format.
+     */
+    static leaveDate(offsetDays = 0): string {
+        const date = new Date();
+        date.setDate(date.getDate() + offsetDays);
+        const yyyy = date.getFullYear();
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        return `${yyyy}-${dd}-${mm}`;
+    }
 }
