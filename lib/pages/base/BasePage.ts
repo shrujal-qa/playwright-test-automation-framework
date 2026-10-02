@@ -127,6 +127,25 @@ export abstract class BasePage {
     }
 
     /**
+     * Opens an OXD dropdown and clicks the first real option (skipping the
+     * "-- Select --" placeholder), returning the text it selected.
+     *
+     * Use this instead of hardcoding a specific option value (e.g. a Leave
+     * Type name) when that value is demo-configured reference data rather
+     * than a fixed application constant — it can be renamed or removed by
+     * other testers on the shared instance, exactly like the employee name
+     * this framework hit (see `getLoggedInUserName`).
+     */
+    async selectFirstDropdownOption(dropdown: Locator): Promise<string> {
+        await dropdown.click();
+        const firstRealOption = this.page.locator('.oxd-select-option').nth(1);
+        await firstRealOption.waitFor({ state: 'visible' });
+        const text = (await firstRealOption.textContent())?.trim() ?? '';
+        await firstRealOption.click();
+        return text;
+    }
+
+    /**
      * Fills an OXD autocomplete input and selects the first matching suggestion.
      * Waits out the "Searching...." placeholder before reading results.
      */

@@ -19,4 +19,10 @@ export const URLS = {
     // PIM
     PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
     PIM_ADD_EMPLOYEE: '/web/index.php/pim/addEmployee',
+
+    // Leave
+    LEAVE_APPLY: '/web/index.php/leave/applyLeave',
+    LEAVE_LIST: '/web/index.php/leave/viewLeaveList',
+    LEAVE_MY_ENTITLEMENTS: '/web/index.php/leave/viewMyLeaveEntitlements',
+    LEAVE_ASSIGN: '/web/index.php/leave/assignLeave',
 } as const;
