@@ -7,6 +7,7 @@
  * -------------------------------------------------------
  */
 
+import { randomBytes, randomInt } from 'node:crypto';
 import { APP_CONSTANTS } from '../data/constants/app-constants';
 
 export class DataGenerator {
@@ -14,8 +15,15 @@ export class DataGenerator {
        Core Generators
     ---------------------------- */
 
+    /**
+     * Uses `crypto.randomBytes` rather than `Math.random()` — some of these
+     * identifiers end up as test-account usernames/passwords (see
+     * `DataGenerator.user`), and CodeQL flags `Math.random()` as an
+     * insecure randomness source in that kind of security-sensitive sink.
+     */
     private static uniqueIdentifier(length = 6): string {
-        return `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 2 + length)}`;
+        const randomPart = randomBytes(8).toString('hex').substring(0, length);
+        return `${Date.now()}_${randomPart}`;
     }
 
     /* ---------------------------
@@ -36,16 +44,18 @@ export class DataGenerator {
     }
 
     /**
-     * Like `entityName()`, but guarantees the result never exceeds
-     * `maxLength` — for fields with a hard character cap (e.g. OrangeHRM's
-     * PIM Employee Name fields cap at 30 characters and reject longer
-     * input outright). Truncates the unique suffix rather than the entity
-     * type, so the name stays readable and still traceable back to the
-     * test that created it.
+     * Several name fields across the app (Recruitment's candidate name,
+     * Admin's employee-picker search) reject/mishandle anything longer
+     * than ~30 characters — confirmed in CI via a visible "Should not
+     * exceed 30 characters" validation message and a search widget that
+     * never returned a suggestion for the longer `entityName()` output.
+     * This stays well under that limit while remaining unique: a base-36
+     * timestamp tail plus a couple of random hex bytes, capped at
+     * `maxLength`.
      */
     static shortEntityName(entityType: string, maxLength = 30): string {
-        const full = this.entityName(entityType);
-        return full.length <= maxLength ? full : full.slice(0, maxLength);
+        const compactId = Date.now().toString(36).slice(-6) + randomBytes(2).toString('hex');
+        return `${APP_CONSTANTS.TEST_PREFIX}${entityType}${compactId}`.slice(0, maxLength);
     }
 
     /* ---------------------------
@@ -65,9 +75,9 @@ export class DataGenerator {
     }
 
     static number(length = 4): string {
-        return Math.floor(
-            Math.pow(10, length - 1) + Math.random() * 9 * Math.pow(10, length - 1)
-        ).toString();
+        const min = Math.pow(10, length - 1);
+        const max = Math.pow(10, length) - 1;
+        return randomInt(min, max + 1).toString();
     }
 
     static phone(): string {

@@ -4,21 +4,25 @@ import { URLS } from '../../../config/urls';
 import { MESSAGES } from '../../data/constants/messages';
 
 export class EmployeeListPage extends BasePage {
+    private readonly addButton: Locator;
     private readonly addEmployeeTab: Locator;
     private readonly searchButton: Locator;
     private readonly resetButton: Locator;
     private readonly confirmDeleteButton: Locator;
     private readonly recordsFoundText: Locator;
+    private readonly noRecordsText: Locator;
     private readonly tableRows: Locator;
 
     constructor(page: Page) {
         super(page);
 
+        this.addButton = page.getByRole('button', { name: /add/i });
         this.addEmployeeTab = page.getByRole('link', { name: 'Add Employee' });
         this.searchButton = page.getByRole('button', { name: 'Search' });
         this.resetButton = page.getByRole('button', { name: 'Reset' });
         this.confirmDeleteButton = page.getByRole('button', { name: /yes, delete/i });
         this.recordsFoundText = page.getByText(/\(\d+\) Records? Found/);
+        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND).first(); // table text or toast
         this.tableRows = page.locator('.oxd-table-card');
     }
 
@@ -36,6 +40,10 @@ export class EmployeeListPage extends BasePage {
         await this.click(this.addEmployeeTab);
     }
 
+    async clickAddEmployee() {
+        await this.click(this.addButton);
+    }
+
     /* ---------------------------
        Filter / Search
     ---------------------------- */
@@ -46,6 +54,10 @@ export class EmployeeListPage extends BasePage {
         await this.waitForTableLoad();
     }
 
+    /**
+     * Employee Id is a plain text filter (not an autocomplete), so it is
+     * also the most reliable way to force a guaranteed "no match" search.
+     */
     async searchByEmployeeId(employeeId: string) {
         await this.stableFill(this.inputByLabel('Employee Id'), employeeId);
         await this.click(this.searchButton);
@@ -72,6 +84,12 @@ export class EmployeeListPage extends BasePage {
         await this.expectVisible(this.page.getByText('Are you Sure?'));
         await this.click(this.confirmDeleteButton);
         await this.expectToast(MESSAGES.SUCCESSFULLY_DELETED);
+    }
+
+    async deleteRowByName(fullName: string) {
+        const row = this.rowByText(fullName);
+        await row.locator('.bi-trash, [class*="trash"]').click();
+        await this.click(this.confirmDeleteButton);
     }
 
     async openEmployeeByName(displayName: string) {
@@ -103,5 +121,21 @@ export class EmployeeListPage extends BasePage {
     /** All visible rows' full text (id, name, job title, status, …) — useful for asserting filter invariants. */
     async getAllRowTexts(): Promise<string[]> {
         return this.tableRows.allTextContents();
+    }
+
+    /* ---------------------------
+       Assertions
+    ---------------------------- */
+
+    async verifyListLoaded() {
+        await this.expectVisible(this.page.getByText('Employee Information', { exact: false }).first());
+    }
+
+    async verifyRowVisible(fullName: string) {
+        await this.expectVisible(this.rowByText(fullName), `Employee row for ${fullName} should be visible in the list`);
+    }
+
+    async verifyNoRecordsFound() {
+        await this.expectVisible(this.noRecordsText, 'No Records Found message should be shown for an unmatched search');
     }
 }

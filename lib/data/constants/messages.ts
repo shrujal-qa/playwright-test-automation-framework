@@ -13,9 +13,11 @@ export const MESSAGES = {
     PASSWORDS_DO_NOT_MATCH: 'Passwords do not match',
     USERNAME_ALREADY_EXISTS: 'Already exists',
     EMPLOYEE_ID_ALREADY_EXISTS: 'Employee Id already exists',
+    INVALID_EMAIL: 'Should be a valid email address',
 
-    // Toast notifications (shared across modules)
+    // Generic OrangeHRM OXD toast messages — reused across modules
     SUCCESSFULLY_SAVED: 'Successfully Saved',
     SUCCESSFULLY_UPDATED: 'Successfully Updated',
     SUCCESSFULLY_DELETED: 'Successfully Deleted',
+    NO_RECORDS_FOUND: 'No Records Found',
 } as const;

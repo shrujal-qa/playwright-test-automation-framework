@@ -7,7 +7,8 @@ const loginUiCases = UI_CONSTANTS.ELEMENTS.LOGIN_PAGE;
 const dashboardUiCases = UI_CONSTANTS.ELEMENTS.DASHBOARD;
 
 test.describe('UI Element Data Validation - Login Page', () => {
-    test.use({ storageState: undefined });
+    // `undefined` keeps the project's saved session; an empty state logs out.
+    test.use({ storageState: { cookies: [], origins: [] } });
 
     for (const uiElement of loginUiCases) {
         test(

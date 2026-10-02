@@ -9,20 +9,36 @@ export const URLS = {
     // Dashboard
     DASHBOARD: '/web/index.php/dashboard/index',
 
-    // Modules
-    PIM: '/web/index.php/pim/viewEmployeeList',
-    LEAVE: '/web/index.php/leave/viewLeaveList',
-
-    // Admin
-    ADMIN_USER_LIST: '/web/index.php/admin/viewSystemUsers',
-
     // PIM
-    PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
+    PIM: '/web/index.php/pim/viewEmployeeList',
     PIM_ADD_EMPLOYEE: '/web/index.php/pim/addEmployee',
 
     // Leave
+    LEAVE: '/web/index.php/leave/viewLeaveList',
     LEAVE_APPLY: '/web/index.php/leave/applyLeave',
+    LEAVE_MY_LEAVE: '/web/index.php/leave/viewMyLeaveList',
     LEAVE_LIST: '/web/index.php/leave/viewLeaveList',
+
+    // Admin — System Users
+    ADMIN_USERS: '/web/index.php/admin/viewSystemUsers',
+
+    // Recruitment
+    RECRUITMENT: '/web/index.php/recruitment/viewCandidates',
+    RECRUITMENT_ADD_CANDIDATE: '/web/index.php/recruitment/addCandidate',
+
+    // My Info (ESS)
+    MY_INFO: '/web/index.php/pim/viewMyDetails',
+
+    // Directory
+    DIRECTORY: '/web/index.php/directory/viewDirectory',
+
+    // Admin (User Management module)
+    ADMIN_USER_LIST: '/web/index.php/admin/viewSystemUsers',
+
+    // PIM (Employee Management module)
+    PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
+
+    // Leave (Leave Management module)
     LEAVE_MY_ENTITLEMENTS: '/web/index.php/leave/viewMyLeaveEntitlements',
     LEAVE_ASSIGN: '/web/index.php/leave/assignLeave',
 } as const;
