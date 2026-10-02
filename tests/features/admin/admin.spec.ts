@@ -123,7 +123,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             testInfo.setTimeout(120_000);
 
             const username = DataGenerator.user('ESS');
-            const password = 'Pw@12345';
+            const password = DataGenerator.password();
 
             Logger.step('Step 1: Create a disposable employee to link the new user to');
             const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
@@ -169,7 +169,7 @@ test.describe('Admin Tests - Add / Edit / Delete System User', () => {
             testInfo.setTimeout(120_000);
 
             const username = DataGenerator.user('Status');
-            const password = 'Pw@12345';
+            const password = DataGenerator.password();
 
             Logger.step('Step 1: Create a disposable employee and linked user');
             const { firstName, fullName, employeeList } = await createDisposableEmployee(page);
