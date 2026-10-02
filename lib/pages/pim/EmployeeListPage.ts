@@ -22,7 +22,7 @@ export class EmployeeListPage extends BasePage {
         this.resetButton = page.getByRole('button', { name: 'Reset' });
         this.confirmDeleteButton = page.getByRole('button', { name: /yes, delete/i });
         this.recordsFoundText = page.getByText(/\(\d+\) Records? Found/);
-        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND);
+        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND).first(); // table text or toast
         this.tableRows = page.locator('.oxd-table-card');
     }
 

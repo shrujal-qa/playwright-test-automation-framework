@@ -22,7 +22,7 @@ export class CandidatesPage extends BasePage {
             .locator('input');
         this.searchButton = page.getByRole('button', { name: /search/i });
         this.tableRows = page.locator('.oxd-table-card');
-        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND);
+        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND).first(); // table text or toast
         this.confirmDeleteButton = page.getByRole('button', { name: /yes, delete/i });
     }
 

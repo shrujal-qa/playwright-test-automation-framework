@@ -37,6 +37,7 @@ export class ApplyLeavePage extends BasePage {
 
     async open() {
         await this.goto(URLS.LEAVE_APPLY);
+        await this.waitForFormLoader();
     }
 
     /**

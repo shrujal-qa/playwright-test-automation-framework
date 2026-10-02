@@ -12,10 +12,10 @@ export class LeaveListPage extends BasePage {
 
         this.statusDropdown = page
             .locator('.oxd-input-group')
-            .filter({ hasText: 'Leave Status' })
+            .filter({ hasText: 'Show Leave with Status' })
             .locator('.oxd-select-text');
         this.searchButton = page.getByRole('button', { name: /search/i });
-        this.pageHeading = page.getByText('Leave List', { exact: true });
+        this.pageHeading = page.getByRole('heading', { name: 'Leave List' });
     }
 
     /* ---------------------------
@@ -24,10 +24,20 @@ export class LeaveListPage extends BasePage {
 
     async open() {
         await this.goto(URLS.LEAVE_LIST);
+        await this.waitForFormLoader();
     }
 
+    /**
+     * The status filter is a multi-select that renders chosen values as
+     * chips and drops them from its option list, and "Pending Approval" is
+     * pre-selected by default — so only pick the option when it isn't
+     * already a chip.
+     */
     async filterByStatus(status: string) {
-        await this.selectDropdownOption(this.statusDropdown, status);
+        const alreadySelected = await this.page.locator('.oxd-chip', { hasText: status }).count();
+        if (!alreadySelected) {
+            await this.selectDropdownOption(this.statusDropdown, status);
+        }
         await this.click(this.searchButton);
     }
 

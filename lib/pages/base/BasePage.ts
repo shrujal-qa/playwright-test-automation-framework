@@ -20,6 +20,15 @@ export abstract class BasePage {
         await this.page.goto(url, { waitUntil: 'domcontentloaded', timeout });
     }
 
+    /**
+     * OXD forms render a `.oxd-form-loader` overlay while they fetch their
+     * options (e.g. Apply Leave's leave types and balances); it intercepts
+     * every click until it goes away.
+     */
+    async waitForFormLoader(timeout = 15_000) {
+        await this.page.locator('.oxd-form-loader').first().waitFor({ state: 'hidden', timeout }).catch(() => {});
+    }
+
     async click(locator: Locator, timeout?: number) {
         await locator.waitFor({ state: 'visible', timeout });
         await locator.click({ timeout });

@@ -24,7 +24,7 @@ export class MyInfoPage extends BasePage {
     }
 
     private tab(name: string): Locator {
-        return this.page.getByRole('tab', { name }).or(this.page.getByText(name, { exact: true }));
+        return this.page.locator('.orangehrm-tabs-item').getByText(name, { exact: true });
     }
 
     /* ---------------------------

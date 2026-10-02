@@ -25,7 +25,7 @@ export class SystemUsersPage extends BasePage {
         this.resetButton = page.getByRole('button', { name: /reset/i });
         this.searchButton = page.getByRole('button', { name: /search/i });
         this.tableRows = page.locator('.oxd-table-card');
-        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND);
+        this.noRecordsText = page.getByText(MESSAGES.NO_RECORDS_FOUND).first(); // table text or toast
         this.confirmDeleteButton = page.getByRole('button', { name: /yes, delete/i });
         this.statusToggleDropdown = page
             .locator('.oxd-input-group')
