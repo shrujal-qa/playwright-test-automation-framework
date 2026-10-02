@@ -154,7 +154,7 @@ playwright-test-automation-framework/
 │   │   ├── directory/         # DirectoryPage (read-only)
 │   │   └── maintenance/       # MaintenancePage (checkpoint only)
 │   └── utils/                 # Logger, Wait, DataGenerator
-├── specs/
+├── tests/
 │   ├── setup/                 # auth.setup.ts — persists storage state
 │   └── features/              # Business-readable specs — auth, dashboard, pim,
 │                               # leave, admin, recruitment, my-info, directory,

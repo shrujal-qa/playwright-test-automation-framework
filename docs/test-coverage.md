@@ -11,21 +11,22 @@ severity, and intent — so it stays readable as the suite grows.
 
 | Metric           | Value |
 | ---------------- | ----- |
-| Total test cases | **63**  |
-| Smoke            | 18    |
-| Regression       | 63    |
-| Critical         | 11    |
-| Negative         | 9     |
-| Validation       | 12    |
+| Total test cases | **86**  |
+| Smoke            | 22    |
+| Regression       | 86    |
+| Critical         | 13    |
+| Negative         | 15    |
+| Validation       | 16    |
 | RBAC             | 2     |
+| E2E              | 2     |
 
 Approximate execution time on a single worker against the OrangeHRM demo:
 
 | Suite            | Tests | Duration       |
 | ---------------- | ----- | -------------- |
-| `@smoke`         | 18    | ~6-8 min        |
-| `@regression`    | 63    | ~25-30 min      |
-| Full run (incl. setup) | 64 | ~25-30 min  |
+| `@smoke`         | 22    | ~7-9 min        |
+| `@regression`    | 86    | ~35-40 min      |
+| Full run (incl. setup) | 87 | ~35-40 min  |
 
 CI shards regression across two runners, cutting wall-clock time roughly in half.
 Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
@@ -44,10 +45,13 @@ Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
 | `@negative`   | Negative paths (invalid credentials, error responses)                 |
 | `@validation` | Form / input validation                                              |
 | `@rbac`       | Role-based access control                                            |
+| `@e2e`        | Multi-step, cross-cutting lifecycle scenarios                        |
+| `@admin`      | Admin module (User Management)                                       |
+| `@pim`        | PIM module (Employee Management)                                     |
 
 ---
 
-## Authentication (`specs/features/auth/login.spec.ts`)
+## Authentication (`tests/features/auth/login.spec.ts`)
 
 ### Positive
 
@@ -82,7 +86,7 @@ Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
 
 ---
 
-## Dashboard (`specs/features/dashboard/dashboard.spec.ts`)
+## Dashboard (`tests/features/dashboard/dashboard.spec.ts`)
 
 ### User role
 
@@ -109,19 +113,111 @@ Coverage now spans nine modules: Authentication, Dashboard, PIM, Leave, Admin
 
 ---
 
-## UI Element Data Validation (`specs/features/ui/ui-elements-data.spec.ts`)
+## UI Element Data Validation (`tests/features/ui/ui-elements-data.spec.ts`)
 
-Data-driven checks that iterate `UI_CONSTANTS.ELEMENTS.*` and assert each
-element is visible — see `.github/prompts/ui-element-data-tests.prompt.md`.
+Data-driven checks that key elements (declared once in `UI_CONSTANTS.ELEMENTS`)
+are visible on their page — one generated test per element, per page.
 
-| Test ID  | Title                                          | Tags                       | Severity |
-| -------- | ----------------------------------------------- | --------------------------- | -------- |
-| `UI-001` | Each Login Page element (username/password/login button) is visible | `@regression @validation`   | Normal   |
-| `UI-002` | Assign Leave element is visible on the dashboard | `@regression @validation`  | Normal   |
+| Test ID   | Title                                             | Tags                    | Severity |
+| --------- | -------------------------------------------------- | -------------------------- | -------- |
+| `UI-001` | `{element}` is visible on the login page (×3)        | `@regression @validation` | Normal   |
+| `UI-002` | `{element}` is visible on the dashboard (×1)          | `@regression @validation` | Normal   |
 
 ---
 
-## PIM (`specs/features/pim/pim.spec.ts`)
+## Admin — User Management (`tests/features/admin/user-management.spec.ts`)
+
+The public OrangeHRM demo is shared with other testers worldwide, so every
+scenario that creates data uses a `DataGenerator`-produced unique username
+and deletes it before the test ends; scenarios that read shared data assert
+structural invariants (every visible row matches the filter) instead of
+absolute record counts.
+
+### View & navigation
+
+| Test ID           | Title                                    | Tags                  | Severity |
+| ------------------ | ---------------------------------------- | ---------------------- | -------- |
+| `ADMIN-USER-001`  | Admin can view the System Users list     | `@smoke @regression @admin` | Normal |
+
+### CRUD lifecycle
+
+| Test ID           | Title                                                          | Tags                                        | Severity |
+| ------------------ | --------------------------------------------------------------- | -------------------------------------------- | -------- |
+| `ADMIN-USER-002`  | Create, find, and delete a system user (full lifecycle)         | `@smoke @regression @critical @admin @e2e`  | Critical |
+| `ADMIN-USER-003`  | Edit an existing user's status                                   | `@regression @admin`                        | Normal   |
+| `ADMIN-USER-008`  | Cancel on Add User form discards changes                         | `@regression @admin`                        | Normal   |
+
+### Search & filter
+
+| Test ID           | Title                                                | Tags                   | Severity |
+| ------------------ | ------------------------------------------------------ | ------------------------ | -------- |
+| `ADMIN-USER-004`  | Search by username returns only the matching record   | `@regression @admin`   | Normal   |
+| `ADMIN-USER-005`  | Search by User Role filters the list correctly         | `@regression @admin`   | Normal   |
+| `ADMIN-USER-006`  | Search by Status filters the list correctly            | `@regression @admin`   | Normal   |
+| `ADMIN-USER-007`  | Reset clears applied filters                            | `@regression @admin`   | Normal   |
+
+### Negative & validation
+
+| Test ID           | Title                                                      | Tags                                          | Severity |
+| ------------------ | ------------------------------------------------------------ | ------------------------------------------------ | -------- |
+| `ADMIN-USER-101`  | Empty Add User form shows field-level validation             | `@regression @negative @validation @admin`      | Normal   |
+| `ADMIN-USER-102`  | Duplicate username is rejected                               | `@regression @negative @admin`                  | Normal   |
+| `ADMIN-USER-103`  | Unselected Employee Name is rejected as invalid               | `@regression @negative @validation @admin`      | Normal   |
+| `ADMIN-USER-104`  | Mismatched password and confirm password is rejected          | `@regression @negative @validation @admin`      | Normal   |
+
+**Known gap:** true role-based access restriction (an ESS-role login being
+blocked from the Admin menu) is not covered — the framework's `USER` and
+`ADMIN` fixtures currently resolve to the same demo `Admin` credentials via
+`.env`. Add a distinct ESS credential to `.env` / `lib/data/users.ts` to
+close this gap.
+
+---
+
+## PIM — Employee Management (`tests/features/pim/employee-management.spec.ts`)
+
+Scope: the Employee List and the Add Employee → Personal Details flow only.
+The remaining profile tabs (Contact Details, Emergency Contacts, Dependents,
+Immigration, Job, Salary, Qualifications, Memberships) are not yet modeled —
+see the roadmap below.
+
+Post-edit lookups use Employee Id (captured at creation time), not Employee
+Name search — the name-autocomplete search index observably lags a few
+seconds behind a just-made edit on this instance, which would otherwise
+make cleanup/verification flaky.
+
+### View & navigation
+
+| Test ID    | Title                                | Tags                     | Severity |
+| ---------- | ------------------------------------- | -------------------------- | -------- |
+| `PIM-001` | Admin can view the Employee List      | `@smoke @regression @pim` | Normal   |
+
+### CRUD lifecycle
+
+| Test ID    | Title                                                                | Tags                                     | Severity |
+| ---------- | ----------------------------------------------------------------------- | ------------------------------------------- | -------- |
+| `PIM-002` | Create, find, and delete an employee (full lifecycle)                   | `@smoke @regression @critical @pim @e2e`  | Critical |
+| `PIM-003` | Create an employee with a custom Employee Id and middle name             | `@regression @pim`                        | Normal   |
+| `PIM-004` | Edit an employee's Personal Details                                      | `@regression @pim`                        | Normal   |
+| `PIM-005` | Cancel on Add Employee discards changes                                  | `@regression @pim`                        | Normal   |
+
+### Search, filter & pagination
+
+| Test ID    | Title                                                    | Tags                 | Severity |
+| ---------- | ------------------------------------------------------------ | ----------------------- | -------- |
+| `PIM-006` | Search by Employee Name returns only the matching record      | `@regression @pim`   | Normal   |
+| `PIM-007` | Search by Employee Id returns only the matching record        | `@regression @pim`   | Normal   |
+| `PIM-008` | Reset clears applied filters                                   | `@regression @pim`   | Normal   |
+| `PIM-009` | Pagination navigates between pages of the Employee List        | `@regression @pim`   | Normal   |
+
+### Negative & validation
+
+| Test ID    | Title                                                      | Tags                                      | Severity |
+| ---------- | ------------------------------------------------------------- | -------------------------------------------- | -------- |
+| `PIM-101` | Empty Add Employee form shows field-level validation           | `@regression @negative @validation @pim`   | Normal   |
+| `PIM-102` | Duplicate Employee Id is rejected                              | `@regression @negative @pim`               | Normal   |
+---
+
+## PIM (`tests/features/pim/pim.spec.ts`)
 
 Employee lifecycle coverage. Every test that creates an employee deletes it
 before finishing, so the shared demo instance stays clean.
@@ -139,7 +235,7 @@ before finishing, so the shared demo instance stays clean.
 
 ---
 
-## Leave (`specs/features/leave/leave.spec.ts`)
+## Leave (`tests/features/leave/leave.spec.ts`)
 
 Apply / view / cancel flows for the requester (ESS), plus the Admin-facing
 Leave List search and status filter. Leave dates are generated far in the
@@ -158,7 +254,7 @@ future to avoid colliding with other runs on the shared demo.
 
 ---
 
-## Admin — System Users (`specs/features/admin/admin.spec.ts`)
+## Admin — System Users (`tests/features/admin/admin.spec.ts`)
 
 Full-lifecycle tests create a disposable PIM employee first (so Add User's
 Employee Name autocomplete has a guaranteed match), then create/edit/delete
@@ -176,7 +272,7 @@ the linked system user, and finally remove the employee.
 
 ---
 
-## Recruitment (`specs/features/recruitment/recruitment.spec.ts`)
+## Recruitment (`tests/features/recruitment/recruitment.spec.ts`)
 
 | Test ID    | Title                                                   | Tags                              | Severity |
 | ---------- | ---------------------------------------------------------- | ---------------------------------- | -------- |
@@ -189,7 +285,7 @@ the linked system user, and finally remove the employee.
 
 ---
 
-## My Info (`specs/features/my-info/my-info.spec.ts`)
+## My Info (`tests/features/my-info/my-info.spec.ts`)
 
 Read-only by design — My Info edits the logged-in employee's real record on
 the shared demo, so these tests only navigate and assert visibility.
@@ -204,7 +300,7 @@ the shared demo, so these tests only navigate and assert visibility.
 
 ---
 
-## Directory (`specs/features/directory/directory.spec.ts`)
+## Directory (`tests/features/directory/directory.spec.ts`)
 
 Read-only company-wide employee lookup.
 
@@ -216,7 +312,7 @@ Read-only company-wide employee lookup.
 
 ---
 
-## Maintenance (`specs/features/maintenance/maintenance.spec.ts`)
+## Maintenance (`tests/features/maintenance/maintenance.spec.ts`)
 
 Maintenance's only real actions are destructive data purges, so this suite
 stops at the re-authentication security checkpoint — **no purge action is
@@ -241,18 +337,21 @@ npm run test:negative
 npm run test:rbac
 
 # Run a single feature
-npx playwright test specs/features/auth/login.spec.ts
-npx playwright test specs/features/dashboard/dashboard.spec.ts
-npx playwright test specs/features/pim/pim.spec.ts
-npx playwright test specs/features/leave/leave.spec.ts
-npx playwright test specs/features/admin/admin.spec.ts
-npx playwright test specs/features/recruitment/recruitment.spec.ts
-npx playwright test specs/features/my-info/my-info.spec.ts
-npx playwright test specs/features/directory/directory.spec.ts
-npx playwright test specs/features/maintenance/maintenance.spec.ts
+npx playwright test tests/features/auth/login.spec.ts
+npx playwright test tests/features/dashboard/dashboard.spec.ts
+npx playwright test tests/features/pim/pim.spec.ts
+npx playwright test tests/features/leave/leave.spec.ts
+npx playwright test tests/features/admin/admin.spec.ts
+npx playwright test tests/features/recruitment/recruitment.spec.ts
+npx playwright test tests/features/my-info/my-info.spec.ts
+npx playwright test tests/features/directory/directory.spec.ts
+npx playwright test tests/features/maintenance/maintenance.spec.ts
+npx playwright test tests/features/admin/
+npx playwright test tests/features/pim/
 
 # Run by Test ID prefix (e.g. all AUTH-1xx negative tests, or a whole module)
 npx playwright test --grep "AUTH-10"
+npx playwright test --grep "ADMIN-USER-"
 npx playwright test --grep "PIM-"
 ```
 
@@ -262,7 +361,7 @@ npx playwright test --grep "PIM-"
 
 Each new spec should:
 
-1. Live under `specs/features/<module>/<feature>.spec.ts`.
+1. Live under `tests/features/<module>/<feature>.spec.ts`.
 2. Carry a Test ID prefix (e.g. `PIM-001`, `LEAVE-101`).
 3. Use the role-based fixtures (`loginAs`, `userPage`, `adminPage`) — no manual login.
 4. Use page objects for **all** locators; no inline selectors in specs.
@@ -276,10 +375,11 @@ See [CONTRIBUTING → Adding New Tests](../CONTRIBUTING.md#adding-new-tests).
 
 Planned expansion (contributions welcome):
 
-- [x] **PIM module** — employee CRUD coverage
+- [x] **Admin module** — System User CRUD, search/filter, validation
+- [x] **PIM module** — Employee List + Add Employee + Personal Details CRUD, search/filter, pagination, validation
+- [ ] **PIM module — remaining tabs** — Contact Details, Emergency Contacts, Dependents, Immigration, Job, Salary, Qualifications, Memberships
 - [x] **Leave module** — apply / cancel flows (approve is out of scope — it
       needs a second, distinct role account the shared demo doesn't provide)
-- [x] **Admin module** — system user CRUD coverage
 - [x] **Recruitment module** — candidate CRUD coverage
 - [x] **My Info module** — read-only ESS profile checks
 - [x] **Directory module** — read-only company lookup

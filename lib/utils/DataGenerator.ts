@@ -50,11 +50,12 @@ export class DataGenerator {
      * exceed 30 characters" validation message and a search widget that
      * never returned a suggestion for the longer `entityName()` output.
      * This stays well under that limit while remaining unique: a base-36
-     * timestamp tail plus a couple of random hex bytes.
+     * timestamp tail plus a couple of random hex bytes, capped at
+     * `maxLength`.
      */
-    static shortEntityName(entityType: string): string {
+    static shortEntityName(entityType: string, maxLength = 30): string {
         const compactId = Date.now().toString(36).slice(-6) + randomBytes(2).toString('hex');
-        return `${APP_CONSTANTS.TEST_PREFIX}${entityType}${compactId}`.slice(0, 30);
+        return `${APP_CONSTANTS.TEST_PREFIX}${entityType}${compactId}`.slice(0, maxLength);
     }
 
     /* ---------------------------
@@ -81,6 +82,11 @@ export class DataGenerator {
 
     static phone(): string {
         return `9${this.number(9)}`;
+    }
+
+    /** Meets OrangeHRM's password composition guidance (upper, lower, digit, symbol). */
+    static password(): string {
+        return `Pw_${this.uniqueIdentifier(6)}!A1`;
     }
 
     static date(offsetDays = 0): string {

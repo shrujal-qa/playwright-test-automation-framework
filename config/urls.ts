@@ -31,4 +31,10 @@ export const URLS = {
 
     // Directory
     DIRECTORY: '/web/index.php/directory/viewDirectory',
+
+    // Admin (User Management module)
+    ADMIN_USER_LIST: '/web/index.php/admin/viewSystemUsers',
+
+    // PIM (Employee Management module)
+    PIM_EMPLOYEE_LIST: '/web/index.php/pim/viewEmployeeList',
 } as const;
