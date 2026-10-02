@@ -107,9 +107,11 @@ export class AddUserPage extends BasePage {
     }
 
     async save() {
-        // Capture the create-user API call so a rejected save shows the
-        // server's actual answer in the CI log. Negative tests never send
-        // it, so a missing response is expected there.
+        // Wait for the create-user API call to finish before returning:
+        // without this the caller's next navigation could abort the save
+        // in flight (ADM-002/004 never found their new user). Its status
+        // and body are logged so a rejected save is diagnosable in CI.
+        // Negative tests never send it, so a missing response is expected.
         const saveResponse = this.page
             .waitForResponse(
                 (response) =>
