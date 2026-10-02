@@ -107,7 +107,27 @@ export class AddUserPage extends BasePage {
     }
 
     async save() {
+        // Capture the create-user API call so a rejected save shows the
+        // server's actual answer in the CI log. Negative tests never send
+        // it, so a missing response is expected there.
+        const saveResponse = this.page
+            .waitForResponse(
+                (response) =>
+                    response.request().method() === 'POST' && /\/api\/v2\/admin\/users\b/.test(response.url()),
+                { timeout: 10_000 }
+            )
+            .catch(() => null);
         await this.click(this.saveButton);
+        const response = await saveResponse;
+        if (response) {
+            const responseBody = await response
+                .text()
+                .then((text) => text.slice(0, 500))
+                .catch(() => '(could not read body)');
+            Logger.info(`AddUserPage.save(): POST ${response.url()} -> ${response.status()} ${responseBody}`);
+        } else {
+            Logger.info('AddUserPage.save(): no POST /api/v2/admin/users within 10s of clicking Save');
+        }
         // Give the save request and its redirect back to System Users time
         // to settle before the caller navigates or re-searches.
         await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
