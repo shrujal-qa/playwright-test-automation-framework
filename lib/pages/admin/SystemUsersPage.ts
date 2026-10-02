@@ -79,14 +79,18 @@ export class SystemUsersPage extends BasePage {
         await this.click(this.resetButton);
     }
 
+    /** Opens the Edit User form via the row's pencil button (clicking the row itself does nothing). */
     async openUserByUsername(username: string) {
-        await this.tableRows.filter({ hasText: username }).first().click();
+        await this.tableRows.filter({ hasText: username }).first().locator('button:has(i.bi-pencil-fill)').click();
+        await this.expectVisible(this.page.getByText('Edit User', { exact: true }));
     }
 
     async changeStatusForRow(status: string) {
         await this.selectDropdownOption(this.statusToggleDropdown, status);
         await this.click(this.saveButton);
-        await this.page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => undefined);
+        // Wait for the confirmation so the caller's next navigation can't
+        // abort the update request in flight.
+        await this.expectToast(MESSAGES.SUCCESSFULLY_UPDATED);
     }
 
     async deleteUserByUsername(username: string) {
